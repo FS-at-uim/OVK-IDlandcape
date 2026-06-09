@@ -659,3 +659,37 @@ a:hover {
     justify-content: center;
   }
 }
+
+/* Publisher Inventory Type Icons */
+.publisher-inventory-types {
+  display: inline-flex;
+  gap: 4px;
+  align-items: center;
+  margin-left: 6px;
+  vertical-align: middle;
+}
+
+.inventory-icon-wrapper {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 4px;
+  background-color: #f1f5f9;
+  color: #64748b;
+  border: 1px solid #e2e8f0;
+  transition: all var(--transition-fast);
+  cursor: help;
+}
+
+.inventory-icon-wrapper:hover {
+  background-color: #e0f2fe;
+  color: var(--color-ovk-blue);
+  border-color: var(--color-ovk-blue-light);
+  transform: translateY(-1px);
+}
+
+.inventory-icon-wrapper svg {
+  display: block;
+}

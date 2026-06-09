@@ -115,9 +115,57 @@ document.addEventListener("DOMContentLoaded", () => {
       vPublishers.forEach(item => {
         const card = createCard(item.id, item.name, "", "publisher");
         card.setAttribute("data-vermarkter-id", item.vermarkterId);
+        
+        // Add inventory type icons behind name
+        if (item.supportedInventoryTypes && item.supportedInventoryTypes.length > 0) {
+          const h3 = card.querySelector("h3");
+          if (h3) {
+            const iconsSpan = document.createElement("span");
+            iconsSpan.className = "publisher-inventory-types";
+            item.supportedInventoryTypes.forEach(type => {
+              const iconWrapper = getInventoryTypeIcon(type);
+              if (iconWrapper) {
+                iconsSpan.appendChild(iconWrapper);
+              }
+            });
+            h3.appendChild(iconsSpan);
+          }
+        }
+        
         listPublishers.appendChild(card);
       });
     });
+  }
+
+  function getInventoryTypeIcon(type) {
+    const wrapper = document.createElement("span");
+    wrapper.className = `inventory-icon-wrapper icon-${type}`;
+    
+    let svgContent = "";
+    let tooltip = "";
+    
+    switch (type) {
+      case "ctv":
+        tooltip = "CTV (Big Screen)";
+        svgContent = `<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="13" rx="2" ry="2"></rect><polyline points="17 2 12 7 7 2"></polyline></svg>`;
+        break;
+      case "app":
+        tooltip = "App Nativ (Display, Native, OLV)";
+        svgContent = `<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect><line x1="12" y1="18" x2="12.01" y2="18"></line></svg>`;
+        break;
+      case "desktop":
+        tooltip = "Desktop Web (Display, Native, OLV)";
+        svgContent = `<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>`;
+        break;
+      case "mobile":
+        tooltip = "Mobile Web / Wrapper Apps (Display, Native, OLV)";
+        svgContent = `<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>`;
+        break;
+    }
+    
+    wrapper.innerHTML = svgContent;
+    wrapper.setAttribute("title", tooltip);
+    return wrapper;
   }
 
   // Card element helper creator
