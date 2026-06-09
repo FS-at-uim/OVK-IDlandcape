@@ -52,7 +52,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function renderDsps() {
     listDsps.innerHTML = "";
-    OVK_LANDSCAPE_CONFIG.dsps.forEach(item => {
+    const sorted = [...OVK_LANDSCAPE_CONFIG.dsps].sort((a, b) => a.name.localeCompare(b.name, 'de'));
+    sorted.forEach(item => {
       const card = createCard(item.id, item.name, "", "dsp");
       listDsps.appendChild(card);
     });
@@ -75,7 +76,8 @@ document.addEventListener("DOMContentLoaded", () => {
       listSsps.appendChild(groupHeader);
       
       const catSsps = OVK_LANDSCAPE_CONFIG.ssps.filter(s => s.category === cat.id);
-      catSsps.forEach(item => {
+      const sorted = [...catSsps].sort((a, b) => a.name.localeCompare(b.name, 'de'));
+      sorted.forEach(item => {
         const card = createCard(item.id, item.name, "", "ssp");
         
         // Show usecases as subtext ONLY for Curation SSPs (where usecases are actively steered)
@@ -94,7 +96,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function renderVermarkters() {
     listVermarkters.innerHTML = "";
-    OVK_LANDSCAPE_CONFIG.vermarkter.forEach(item => {
+    const sorted = [...OVK_LANDSCAPE_CONFIG.vermarkter].sort((a, b) => a.name.localeCompare(b.name, 'de'));
+    sorted.forEach(item => {
       const card = createCard(item.id, item.name, item.description, "vermarkter");
       listVermarkters.appendChild(card);
     });
@@ -104,7 +107,8 @@ document.addEventListener("DOMContentLoaded", () => {
     listPublishers.innerHTML = "";
     
     // Group publishers by Vermarkter for better representation of n:1 relationship
-    OVK_LANDSCAPE_CONFIG.vermarkter.forEach(v => {
+    const sortedVermarkters = [...OVK_LANDSCAPE_CONFIG.vermarkter].sort((a, b) => a.name.localeCompare(b.name, 'de'));
+    sortedVermarkters.forEach(v => {
       const groupHeader = document.createElement("div");
       groupHeader.className = "publisher-group-header";
       groupHeader.setAttribute("data-group-vermarkter", v.id);
@@ -112,7 +116,9 @@ document.addEventListener("DOMContentLoaded", () => {
       listPublishers.appendChild(groupHeader);
 
       const vPublishers = OVK_LANDSCAPE_CONFIG.publishers.filter(p => p.vermarkterId === v.id);
-      vPublishers.forEach(item => {
+      // Sort publishers ascending too for clean layout
+      const sortedPublishers = [...vPublishers].sort((a, b) => a.name.localeCompare(b.name, 'de'));
+      sortedPublishers.forEach(item => {
         const card = createCard(item.id, item.name, "", "publisher");
         card.setAttribute("data-vermarkter-id", item.vermarkterId);
         
