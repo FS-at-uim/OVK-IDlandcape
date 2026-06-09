@@ -389,8 +389,8 @@ a:hover {
   border: 1px solid rgba(0,0,0,0.05);
 }
 
-#stage-dsp .stage-badge,
-#stage-dsp .stage-header {
+.stage-column .stage-badge,
+.stage-column .stage-header {
   border-bottom-color: var(--color-ovk-blue);
 }
 
