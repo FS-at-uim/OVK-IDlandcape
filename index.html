@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OVK ID Landscape Map</title>
+  <!-- Google Fonts: Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <!-- Stylesheets -->
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- Top Navigation / Header -->
+  <header class="main-header">
+    <div class="header-container">
+      <div class="logo-area">
+        <span class="logo-ovk">OVK</span>
+        <span class="logo-separator">|</span>
+        <span class="logo-title">ID Landscape Map</span>
+      </div>
+      <nav class="header-nav">
+        <ul>
+          <li><a href="https://www.ovk.de/" target="_blank">OVK Homepage</a></li>
+          <li><a href="https://www.ovk.de/units/" target="_blank">Units</a></li>
+          <li><a href="https://www.ovk.de/projekte/" target="_blank">Projekte</a></li>
+        </ul>
+      </nav>
+      <div class="header-tagline">
+        Eine Initiative des BVDW e.V.
+      </div>
+    </div>
+  </header>
+
+  <!-- Hero Section -->
+  <section class="hero-section">
+    <div class="hero-container">
+      <h1>OVK ID Landscape Map</h1>
+      
+    </div>
+  </section>
+
+  <!-- Main Application Wrapper -->
+  <main class="app-container">
+    
+    <!-- Controls Panel -->
+    <div class="controls-panel">
+      <div class="filter-status">
+        <span class="status-label">Aktive Filter:</span>
+        <div class="active-chips" id="active-chips">
+          <span class="no-filter-text">Keine Filter aktiv</span>
+        </div>
+      </div>
+      <button id="btn-reset" class="btn-reset" disabled>
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 1121.21 7.89M9 11l3 3m0 0l3-3m-3 3V8" />
+        </svg>
+        Ansicht zurücksetzen
+      </button>
+    </div>
+
+    <!-- Landscape Grid (5 columns) -->
+    <div class="landscape-grid">
+      
+      <!-- Stage 1: Usecase -->
+      <div class="stage-column" id="stage-usecase" data-stage="usecase">
+        <div class="stage-header">
+          <div class="stage-badge">1</div>
+          <h2>Usecase</h2>
+          <span class="stage-subtitle">Vorselektion</span>
+        </div>
+        <div class="cards-list" id="list-usecases">
+          <!-- Dynamically filled -->
+        </div>
+      </div>
+
+      <!-- Stage 2: DSP -->
+      <div class="stage-column" id="stage-dsp" data-stage="dsp">
+        <div class="stage-header">
+          <div class="stage-badge">2</div>
+          <h2>DSP</h2>
+          <span class="stage-subtitle">Demand Side</span>
+        </div>
+        <div class="cards-list" id="list-dsps">
+          <!-- Dynamically filled -->
+        </div>
+      </div>
+
+      <!-- Stage 3: SSP -->
+      <div class="stage-column" id="stage-ssp" data-stage="ssp">
+        <div class="stage-header">
+          <div class="stage-badge">3</div>
+          <h2>SSP</h2>
+          <span class="stage-subtitle">Supply Side</span>
+        </div>
+        <div class="cards-list" id="list-ssps">
+          <!-- Dynamically filled -->
+        </div>
+      </div>
+
+      <!-- Stage 4: Vermarkter -->
+      <div class="stage-column" id="stage-vermarkter" data-stage="vermarkter">
+        <div class="stage-header">
+          <div class="stage-badge">4</div>
+          <h2>Vermarkter</h2>
+          <span class="stage-subtitle">Sales & Premium</span>
+        </div>
+        <div class="cards-list" id="list-vermarkters">
+          <!-- Dynamically filled -->
+        </div>
+      </div>
+
+      <!-- Stage 5: Publisher -->
+      <div class="stage-column" id="stage-publisher" data-stage="publisher">
+        <div class="stage-header">
+          <div class="stage-badge">5</div>
+          <h2>Publisher</h2>
+          <span class="stage-subtitle">Endmedien (n:1)</span>
+        </div>
+        <div class="cards-list" id="list-publishers">
+          <!-- Dynamically filled -->
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Info Drawer for Selected Items -->
+    <div class="detail-drawer" id="detail-drawer">
+      <div class="drawer-header">
+        <h3 id="drawer-title">Partner-Details</h3>
+        <button class="btn-close-drawer" id="btn-close-drawer">&times;</button>
+      </div>
+      <div class="drawer-content" id="drawer-content">
+        Wählen Sie einen Partner aus, um weitere Details anzuzeigen.
+      </div>
+    </div>
+
+  </main>
+
+  <!-- Footer -->
+  <footer class="main-footer">
+    <div class="footer-container">
+      <div class="footer-logo">
+        <strong>OVK</strong> Online-Vermarkterkreis im BVDW e.V.
+      </div>
+      <div class="footer-links">
+        <a href="https://www.ovk.de/impressum/" target="_blank">Impressum</a>
+        <a href="https://www.ovk.de/datenschutz/" target="_blank">Datenschutz</a>
+        <a href="https://www.bvdw.org/" target="_blank">BVDW Homepage</a>
+      </div>
+      <div class="footer-copyright">
+        &copy; 2026 Online-Vermarkterkreis (OVK). Alle Rechte vorbehalten.
+      </div>
+    </div>
+  </footer>
+
+  <!-- Scripts -->
+  <script src="config.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
