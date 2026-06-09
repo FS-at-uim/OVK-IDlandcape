@@ -135,12 +135,12 @@ const OVK_LANDSCAPE_CONFIG = {
   // 5. Stufe: Publisher (einem Vermarkter zugeordnet)
   publishers: [
     // Ad Alliance
-    { id: "rtl", name: "RTL.de", vermarkterId: "ad_alliance", supportedInventoryTypes: ["desktop", "mobile", "app"] },
-    { id: "ntv", name: "n-tv.de", vermarkterId: "ad_alliance", supportedInventoryTypes: ["desktop", "mobile", "app"] },
-    { id: "stern", name: "stern.de", vermarkterId: "ad_alliance", supportedInventoryTypes: ["desktop", "mobile"] },
+    { id: "rtl", name: "RTL.de", vermarkterId: "ad_alliance", supportedInventoryTypes: ["desktop", "mobile", "ctv"] },
+    { id: "ntv", name: "n-tv.de", vermarkterId: "ad_alliance", supportedInventoryTypes: ["desktop", "mobile", "ctv"] },
+    { id: "stern", name: "stern.de", vermarkterId: "ad_alliance", supportedInventoryTypes: ["desktop", "mobile", "app"] },
 
     // Media Impact
-    { id: "bild", name: "Bild.de", vermarkterId: "media_impact", supportedInventoryTypes: ["desktop", "mobile", "app"] },
+    { id: "bild", name: "Bild.de", vermarkterId: "media_impact", supportedInventoryTypes: ["desktop", "mobile", "app", "ctv"] },
     { id: "welt", name: "Welt.de", vermarkterId: "media_impact", supportedInventoryTypes: ["desktop", "mobile", "app"] },
     { id: "business_insider", name: "Business Insider", vermarkterId: "media_impact", supportedInventoryTypes: ["desktop", "mobile"] },
 
