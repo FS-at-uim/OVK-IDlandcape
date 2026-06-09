@@ -40,7 +40,7 @@ const OVK_LANDSCAPE_CONFIG = {
       logo: "AD",
       supportedUsecases: ["fc"],
       supportedSSPs: ["pubmatic", "index_exchange", "magnite", "xandr", "yieldlab", "smartclip"],
-      supportedVermarkter: ["media_impact", "seven_one_media", "stroeer", "uim"]
+      supportedVermarkter: ["media_impact", "seven_one_media", "uim"]
     },
     {
       id: "dv360",
@@ -48,7 +48,7 @@ const OVK_LANDSCAPE_CONFIG = {
       logo: "DV360",
       supportedUsecases: [],
       supportedSSPs: ["pubmatic", "index_exchange", "magnite", "xandr", "yieldlab"],
-      supportedVermarkter: ["media_impact", "seven_one_media", "stroeer", "uim", "iqd", "ad_alliance", "iqd"]  
+      supportedVermarkter: ["media_impact", "seven_one_media", "uim", "iqd", "ad_alliance"]  
     }
   ],
 
