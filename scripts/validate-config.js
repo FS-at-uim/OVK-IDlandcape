@@ -44,6 +44,18 @@ try {
     }
   });
 
+  const dataPartnersPath = path.join(__dirname, '../config/data_partners.js');
+  if (fs.existsSync(dataPartnersPath)) {
+    try {
+      const code = fs.readFileSync(dataPartnersPath, 'utf8');
+      eval(code);
+    } catch (e) {
+      logError(`Fehler beim Evaluieren von config/data_partners.js: ${e.message}`);
+    }
+  } else {
+    logError('config/data_partners.js existiert nicht!');
+  }
+
   const config = window.OVK_LANDSCAPE_CONFIG;
   if (!config) {
     logError('window.OVK_LANDSCAPE_CONFIG wurde nicht korrekt initialisiert.');
@@ -210,6 +222,47 @@ try {
         ssp.supportedVermarkter.forEach(vId => {
           if (!vermarkterIds.has(vId)) {
             logError(`SSP '${ssp.name}' verweist auf nicht existierende Vermarkter-ID: '${vId}'`);
+          }
+        });
+      }
+    });
+  }
+
+  // 9. Data Partners validieren
+  if (!Array.isArray(config.dataPartners)) {
+    logError('config.dataPartners muss ein Array sein.');
+  } else {
+    config.dataPartners.forEach((dp, idx) => {
+      const dpName = dp.name || `Data Partner Index ${idx}`;
+      if (!dp.id) logError(`Data Partner an Index ${idx} fehlt 'id'.`);
+      if (!dp.name) logError(`Data Partner '${dp.id || idx}' fehlt 'name'.`);
+      
+      if (!Array.isArray(dp.supportedIds)) {
+        logError(`Data Partner '${dpName}': supportedIds muss ein Array sein.`);
+      } else {
+        dp.supportedIds.forEach(id => {
+          if (!registeredIds.has(id.toLowerCase())) {
+            logError(`Data Partner '${dpName}' verweist auf nicht registriertes ID-System: '${id}'`);
+          }
+        });
+      }
+
+      if (!Array.isArray(dp.supportedDSPs)) {
+        logError(`Data Partner '${dpName}': supportedDSPs muss ein Array sein.`);
+      } else {
+        dp.supportedDSPs.forEach(dId => {
+          if (!dspIds.has(dId)) {
+            logError(`Data Partner '${dpName}' verweist auf nicht existierende DSP-ID: '${dId}'`);
+          }
+        });
+      }
+
+      if (!Array.isArray(dp.supportedSSPs)) {
+        logError(`Data Partner '${dpName}': supportedSSPs muss ein Array sein.`);
+      } else {
+        dp.supportedSSPs.forEach(sId => {
+          if (!sspIds.has(sId)) {
+            logError(`Data Partner '${dpName}' verweist auf nicht existierende SSP-ID: '${sId}'`);
           }
         });
       }

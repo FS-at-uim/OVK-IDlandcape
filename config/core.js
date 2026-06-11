@@ -111,7 +111,8 @@ window.OVK_LANDSCAPE_CONFIG = {
       supportedVermarkter: ["ad_alliance"],
       supportedIds: []
     }
-  ]
+  ],
+  dataPartners: []
 };
 
 // Für Node.js CommonJS-Umgebung (Validierung)

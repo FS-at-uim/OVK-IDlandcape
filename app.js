@@ -1,58 +1,15 @@
 // OVK ID Landscape Map - Application Logic
 
-document.addEventListener("DOMContentLoaded", () => {
-  // Abwärtskompatibilität und Normalisierung für ID-Systeme (Case-Insensitivity)
-  if (window.OVK_LANDSCAPE_CONFIG) {
-    // 1. IDs Register normalisieren
-    if (Array.isArray(window.OVK_LANDSCAPE_CONFIG.ids)) {
-      window.OVK_LANDSCAPE_CONFIG.ids.forEach(idDef => {
-        if (idDef.id) idDef.id = idDef.id.toLowerCase();
-      });
-    }
+document.addEventListener("DOMContentLoaded", async () => {
+  // 1. Zuerst alle externen Konfigurationsdateien dynamisch und resilient laden
+  await loadConfigData();
 
-    // 2. DSPs normalisieren
-    if (Array.isArray(window.OVK_LANDSCAPE_CONFIG.dsps)) {
-      window.OVK_LANDSCAPE_CONFIG.dsps.forEach(dsp => {
-        if (Array.isArray(dsp.supportedIds)) {
-          dsp.supportedIds = dsp.supportedIds.map(id => id.toLowerCase());
-        }
-      });
-    }
+  // 2. Initialisierung der normalisierten Datenstrukturen
+  normalizeConfigData();
 
-    // 3. SSPs normalisieren
-    if (Array.isArray(window.OVK_LANDSCAPE_CONFIG.ssps)) {
-      window.OVK_LANDSCAPE_CONFIG.ssps.forEach(ssp => {
-        if (Array.isArray(ssp.supportedIds)) {
-          ssp.supportedIds = ssp.supportedIds.map(id => id.toLowerCase());
-        }
-      });
-    }
-
-    // 4. Vermarkter & Publisher normalisieren und abflachen
-    if (!window.OVK_LANDSCAPE_CONFIG.publishers) {
-      window.OVK_LANDSCAPE_CONFIG.publishers = [];
-      window.OVK_LANDSCAPE_CONFIG.vermarkter.forEach(v => {
-        if (v.publishers) {
-          v.publishers.forEach(p => {
-            p.vermarkterId = v.id;
-            if (Array.isArray(p.supportedIds)) {
-              p.supportedIds = p.supportedIds.map(id => id.toLowerCase());
-            }
-            window.OVK_LANDSCAPE_CONFIG.publishers.push(p);
-          });
-        }
-      });
-    } else {
-      window.OVK_LANDSCAPE_CONFIG.publishers.forEach(p => {
-        if (Array.isArray(p.supportedIds)) {
-          p.supportedIds = p.supportedIds.map(id => id.toLowerCase());
-        }
-      });
-    }
-  }
-
-  // Global State - Selections for each of the 5 stages
+  // Global State - Selections for each of the stages (+ data partner)
   let selectedUsecaseId = null;
+  let selectedDataPartnerId = null;
   let selectedDspId = null;
   let selectedSspId = null;
   let selectedVermarkterId = null;
@@ -60,6 +17,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // DOM Elements
   const listUsecases = document.getElementById("list-usecases");
+  const listDataPartner = document.getElementById("list-datapartner");
+  const stageDataPartnerPanel = document.getElementById("stage-datapartner");
   const listDsps = document.getElementById("list-dsps");
   const listSsps = document.getElementById("list-ssps");
   const listVermarkters = document.getElementById("list-vermarkters");
@@ -82,10 +41,106 @@ document.addEventListener("DOMContentLoaded", () => {
     updateFiltering();
   }
 
+  // --- Dynamic Resilient Config Loading & Normalization ---
+
+  async function loadConfigData() {
+    const files = [
+      "config/vermarkter/ad_alliance.js",
+      "config/vermarkter/media_impact.js",
+      "config/vermarkter/seven_one_media.js",
+      "config/vermarkter/stroeer.js",
+      "config/vermarkter/uim.js",
+      "config/vermarkter/iqd.js",
+      "config/data_partners.js"
+    ];
+    
+    for (const file of files) {
+      try {
+        const response = await fetch(file + "?v=1.0.1");
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status} beim Laden von ${file}`);
+        }
+        const code = await response.text();
+        (new Function(code))();
+      } catch (err) {
+        console.error(`Resilienz-Warnung: Konfigurationsdatei "${file}" konnte nicht geladen oder geparst werden. Der Rest der Anwendung wird geladen.`, err);
+      }
+    }
+  }
+
+  function normalizeConfigData() {
+    if (window.OVK_LANDSCAPE_CONFIG) {
+      // Fehlende Listen initialisieren
+      if (!window.OVK_LANDSCAPE_CONFIG.vermarkter) {
+        window.OVK_LANDSCAPE_CONFIG.vermarkter = [];
+      }
+      if (!window.OVK_LANDSCAPE_CONFIG.dataPartners) {
+        window.OVK_LANDSCAPE_CONFIG.dataPartners = [];
+      }
+
+      // 1. IDs Register normalisieren
+      if (Array.isArray(window.OVK_LANDSCAPE_CONFIG.ids)) {
+        window.OVK_LANDSCAPE_CONFIG.ids.forEach(idDef => {
+          if (idDef.id) idDef.id = idDef.id.toLowerCase();
+        });
+      }
+
+      // 2. DSPs normalisieren
+      if (Array.isArray(window.OVK_LANDSCAPE_CONFIG.dsps)) {
+        window.OVK_LANDSCAPE_CONFIG.dsps.forEach(dsp => {
+          if (Array.isArray(dsp.supportedIds)) {
+            dsp.supportedIds = dsp.supportedIds.map(id => id.toLowerCase());
+          }
+        });
+      }
+
+      // 3. SSPs normalisieren
+      if (Array.isArray(window.OVK_LANDSCAPE_CONFIG.ssps)) {
+        window.OVK_LANDSCAPE_CONFIG.ssps.forEach(ssp => {
+          if (Array.isArray(ssp.supportedIds)) {
+            ssp.supportedIds = ssp.supportedIds.map(id => id.toLowerCase());
+          }
+        });
+      }
+
+      // 4. Data Partners normalisieren
+      if (Array.isArray(window.OVK_LANDSCAPE_CONFIG.dataPartners)) {
+        window.OVK_LANDSCAPE_CONFIG.dataPartners.forEach(dp => {
+          if (Array.isArray(dp.supportedIds)) {
+            dp.supportedIds = dp.supportedIds.map(id => id.toLowerCase());
+          }
+        });
+      }
+
+      // 5. Vermarkter & Publisher normalisieren und abflachen
+      if (!window.OVK_LANDSCAPE_CONFIG.publishers) {
+        window.OVK_LANDSCAPE_CONFIG.publishers = [];
+        window.OVK_LANDSCAPE_CONFIG.vermarkter.forEach(v => {
+          if (v.publishers) {
+            v.publishers.forEach(p => {
+              p.vermarkterId = v.id;
+              if (Array.isArray(p.supportedIds)) {
+                p.supportedIds = p.supportedIds.map(id => id.toLowerCase());
+              }
+              window.OVK_LANDSCAPE_CONFIG.publishers.push(p);
+            });
+          }
+        });
+      } else {
+        window.OVK_LANDSCAPE_CONFIG.publishers.forEach(p => {
+          if (Array.isArray(p.supportedIds)) {
+            p.supportedIds = p.supportedIds.map(id => id.toLowerCase());
+          }
+        });
+      }
+    }
+  }
+
   // --- Dynamic Rendering ---
 
   function renderAll() {
     renderUsecases();
+    renderDataPartners();
     renderDsps();
     renderSsps();
     renderVermarkters();
@@ -98,6 +153,18 @@ document.addEventListener("DOMContentLoaded", () => {
       const card = createCard(item.id, item.name, item.description, "usecase");
       listUsecases.appendChild(card);
     });
+  }
+
+  function renderDataPartners() {
+    listDataPartner.innerHTML = "";
+    if (Array.isArray(OVK_LANDSCAPE_CONFIG.dataPartners)) {
+      const sorted = [...OVK_LANDSCAPE_CONFIG.dataPartners].sort((a, b) => a.name.localeCompare(b.name, 'de'));
+      sorted.forEach(item => {
+        const card = createCard(item.id, item.name, item.description, "datapartner");
+        appendIdBadges(card, item.supportedIds);
+        listDataPartner.appendChild(card);
+      });
+    }
   }
 
   function renderDsps() {
@@ -338,6 +405,9 @@ document.addEventListener("DOMContentLoaded", () => {
     // Toggle filter selection (selecting one deselects others in the same stage)
     if (type === "usecase") {
       selectedUsecaseId = (selectedUsecaseId === id) ? null : id;
+      selectedDataPartnerId = null;
+    } else if (type === "datapartner") {
+      selectedDataPartnerId = (selectedDataPartnerId === id) ? null : id;
     } else if (type === "dsp") {
       selectedDspId = (selectedDspId === id) ? null : id;
     } else if (type === "ssp") {
@@ -347,21 +417,31 @@ document.addEventListener("DOMContentLoaded", () => {
     } else if (type === "publisher") {
       selectedPublisherId = (selectedPublisherId === id) ? null : id;
     }
-
+ 
     updateFiltering();
   }
 
   function removeFilter(type) {
-    if (type === "usecase") selectedUsecaseId = null;
-    else if (type === "dsp") selectedDspId = null;
-    else if (type === "ssp") selectedSspId = null;
-    else if (type === "vermarkter") selectedVermarkterId = null;
-    else if (type === "publisher") selectedPublisherId = null;
+    if (type === "usecase") {
+      selectedUsecaseId = null;
+      selectedDataPartnerId = null;
+    } else if (type === "datapartner") {
+      selectedDataPartnerId = null;
+    } else if (type === "dsp") {
+      selectedDspId = null;
+    } else if (type === "ssp") {
+      selectedSspId = null;
+    } else if (type === "vermarkter") {
+      selectedVermarkterId = null;
+    } else if (type === "publisher") {
+      selectedPublisherId = null;
+    }
     updateFiltering();
   }
 
   function resetFilters() {
     selectedUsecaseId = null;
+    selectedDataPartnerId = null;
     selectedDspId = null;
     selectedSspId = null;
     selectedVermarkterId = null;
@@ -375,6 +455,7 @@ document.addEventListener("DOMContentLoaded", () => {
   function updateFiltering() {
     // 1. Get references to all DOM elements
     const usecaseCards = listUsecases.querySelectorAll(".partner-card");
+    const datapartnerCards = listDataPartner.querySelectorAll(".partner-card");
     const dspCards = listDsps.querySelectorAll(".partner-card");
     const sspCards = listSsps.querySelectorAll(".partner-card");
     const vermarkterCards = listVermarkters.querySelectorAll(".partner-card");
@@ -382,8 +463,16 @@ document.addEventListener("DOMContentLoaded", () => {
     const publisherGroupHeaders = listPublishers.querySelectorAll(".publisher-group-header");
     const sspGroupHeaders = listSsps.querySelectorAll(".ssp-group-header");
 
+    // Conditionally show/hide Stage 1a (Data Partner) depending on Usecase Selection
+    if (selectedUsecaseId === "targeting") {
+      stageDataPartnerPanel.style.display = "flex";
+    } else {
+      stageDataPartnerPanel.style.display = "none";
+      selectedDataPartnerId = null;
+    }
+
     // 2. Clear previous classes
-    const allCards = [...usecaseCards, ...dspCards, ...sspCards, ...vermarkterCards, ...publisherCards];
+    const allCards = [...usecaseCards, ...datapartnerCards, ...dspCards, ...sspCards, ...vermarkterCards, ...publisherCards];
     allCards.forEach(c => {
       c.className = "partner-card";
     });
@@ -393,6 +482,49 @@ document.addEventListener("DOMContentLoaded", () => {
     sspGroupHeaders.forEach(h => {
       h.className = "ssp-group-header";
     });
+
+    // Helper function to check compatibility with selected Data Partner
+    function isPathDataPartnerCompatible(path, dpId) {
+      if (!dpId) return true;
+      const dp = OVK_LANDSCAPE_CONFIG.dataPartners.find(item => item.id === dpId);
+      if (!dp) return true;
+
+      // 1. Activation route check (DSP or Curation SSP must be supported by Data Partner)
+      const dspSupported = (dp.supportedDSPs || []).includes(path.dsp);
+      const sspSupported = (dp.supportedSSPs || []).includes(path.ssp);
+      if (!dspSupported && !sspSupported) return false;
+
+      // 2. ID compatibility check
+      const allowedIds = [];
+      if (dp.supportedIds.includes("utiq")) {
+        allowedIds.push("utiq");
+      }
+      if (dp.supportedIds.includes("netid")) {
+        allowedIds.push("netid", "netid_utiq");
+      }
+
+      // Fetch node definitions
+      const dsp = OVK_LANDSCAPE_CONFIG.dsps.find(item => item.id === path.dsp);
+      const ssp = OVK_LANDSCAPE_CONFIG.ssps.find(item => item.id === path.ssp);
+      const pub = OVK_LANDSCAPE_CONFIG.publishers.find(item => item.id === path.publisher);
+
+      // DSP must support allowed ID if selected as activation route
+      if (dspSupported) {
+        const dspHasId = dsp && (dsp.supportedIds || []).some(id => allowedIds.includes(id));
+        if (!dspHasId && !sspSupported) return false;
+      }
+      // SSP must support allowed ID if selected as activation route
+      if (sspSupported) {
+        const sspHasId = ssp && (ssp.supportedIds || []).some(id => allowedIds.includes(id));
+        if (!sspHasId && !dspSupported) return false;
+      }
+
+      // Publisher must support allowed ID
+      const pubHasId = pub && (pub.supportedIds || []).some(id => allowedIds.includes(id));
+      if (!pubHasId) return false;
+
+      return true;
+    }
 
     // 3. Generate all physically connected paths in the ecosystem
     const allPaths = [];
@@ -463,6 +595,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // 4. Filter paths based on active selections (physical check first)
     const physicalMatchingPaths = allPaths.filter(path => {
       if (selectedUsecaseId && path.usecase !== selectedUsecaseId) return false;
+      if (selectedDataPartnerId && !isPathDataPartnerCompatible(path, selectedDataPartnerId)) return false;
       if (selectedDspId && path.dsp !== selectedDspId) return false;
       if (selectedSspId && path.ssp !== selectedSspId) return false;
       if (selectedVermarkterId && path.vermarkter !== selectedVermarkterId) return false;
@@ -472,10 +605,30 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // 5. Gather all active IDs across stages in matching paths
     const activeUsecaseIds = new Set();
+    const activeDataPartnerIds = new Set();
     const activeDspIds = new Set();
     const activeSspIds = new Set();
     const activeVermarkterIds = new Set();
     const activePublisherIds = new Set();
+
+    // Determine active Data Partners (only when Usecase Targeting is selected)
+    if (selectedUsecaseId === "targeting") {
+      if (Array.isArray(OVK_LANDSCAPE_CONFIG.dataPartners)) {
+        OVK_LANDSCAPE_CONFIG.dataPartners.forEach(dp => {
+          const hasCompatiblePath = allPaths.some(path => {
+            if (path.usecase !== "targeting") return false;
+            if (selectedDspId && path.dsp !== selectedDspId) return false;
+            if (selectedSspId && path.ssp !== selectedSspId) return false;
+            if (selectedVermarkterId && path.vermarkter !== selectedVermarkterId) return false;
+            if (selectedPublisherId && path.publisher !== selectedPublisherId) return false;
+            return isPathDataPartnerCompatible(path, dp.id);
+          });
+          if (hasCompatiblePath) {
+            activeDataPartnerIds.add(dp.id);
+          }
+        });
+      }
+    }
 
     physicalMatchingPaths.forEach(path => {
       // 1. For the Usecase column:
@@ -504,7 +657,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     const isAnyFilterActive = !!(
-      selectedUsecaseId || selectedDspId || selectedSspId || selectedVermarkterId || selectedPublisherId
+      selectedUsecaseId || selectedDataPartnerId || selectedDspId || selectedSspId || selectedVermarkterId || selectedPublisherId
     );
 
     // Helper to assign CSS classes
@@ -525,6 +678,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Apply classes to each column
     applyClasses(usecaseCards, activeUsecaseIds, selectedUsecaseId);
+    applyClasses(datapartnerCards, activeDataPartnerIds, selectedDataPartnerId);
     applyClasses(dspCards, activeDspIds, selectedDspId);
     applyClasses(sspCards, activeSspIds, selectedSspId);
     applyClasses(vermarkterCards, activeVermarkterIds, selectedVermarkterId);
@@ -558,6 +712,7 @@ document.addEventListener("DOMContentLoaded", () => {
     
     const activeFilters = [];
     if (selectedUsecaseId) activeFilters.push({ type: "usecase", id: selectedUsecaseId, name: "Usecase", findFn: id => OVK_LANDSCAPE_CONFIG.usecases.find(u => u.id === id) });
+    if (selectedDataPartnerId) activeFilters.push({ type: "datapartner", id: selectedDataPartnerId, name: "Data Partner", findFn: id => OVK_LANDSCAPE_CONFIG.dataPartners.find(dp => dp.id === id) });
     if (selectedDspId) activeFilters.push({ type: "dsp", id: selectedDspId, name: "DSP", findFn: id => OVK_LANDSCAPE_CONFIG.dsps.find(d => d.id === id) });
     if (selectedSspId) activeFilters.push({ type: "ssp", id: selectedSspId, name: "SSP", findFn: id => OVK_LANDSCAPE_CONFIG.ssps.find(s => s.id === id) });
     if (selectedVermarkterId) activeFilters.push({ type: "vermarkter", id: selectedVermarkterId, name: "Vermarkter", findFn: id => OVK_LANDSCAPE_CONFIG.vermarkter.find(v => v.id === id) });
@@ -601,6 +756,27 @@ document.addEventListener("DOMContentLoaded", () => {
       htmlContent = `
         <p><strong>Beschreibung:</strong> ${item.description}</p>
         <p style="margin-top: 0.5rem;"><em>Klicken Sie auf den Usecase, um die Ansicht auf diesen Filter einzuschränken.</em></p>
+      `;
+    } else if (type === "datapartner") {
+      const item = OVK_LANDSCAPE_CONFIG.dataPartners.find(dp => dp.id === id);
+      title = `Data Partner: ${item.name}`;
+      
+      const dspNames = (item.supportedDSPs || []).map(sid => {
+        const dsp = OVK_LANDSCAPE_CONFIG.dsps.find(d => d.id === sid);
+        return dsp ? dsp.name : sid;
+      }).join(", ");
+      
+      const sspNames = (item.supportedSSPs || []).map(sid => {
+        const ssp = OVK_LANDSCAPE_CONFIG.ssps.find(s => s.id === sid);
+        return ssp ? ssp.name : sid;
+      }).join(", ");
+
+      htmlContent = `
+        <p><strong>Beschreibung:</strong> ${item.description}</p>
+        ${getIdsDetailsHtml(item.supportedIds)}
+        <p style="margin-top: 0.5rem;"><strong>Verfügbare DSPs:</strong> ${dspNames || "Keine"}</p>
+        <p style="margin-top: 0.5rem;"><strong>Verfügbare Curation SSPs:</strong> ${sspNames || "Keine"}</p>
+        <p style="margin-top: 0.8rem;"><em>Klicken Sie auf den Data Partner, um die Ansicht auf diesen Filter einzuschränken.</em></p>
       `;
     } else if (type === "dsp") {
       const item = OVK_LANDSCAPE_CONFIG.dsps.find(d => d.id === id);

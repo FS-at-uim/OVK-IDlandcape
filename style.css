@@ -787,3 +787,22 @@ a:hover {
 #stage-publisher .partner-card {
   min-height: 48px;
 }
+
+/* Stage 1a: Data Partner specific styling */
+.stage-datapartner-panel {
+  border-bottom: 3px solid #0056cc !important; /* Blue color for Stage 1a */
+}
+
+.stage-datapartner-panel .stage-badge {
+  background-color: #0056cc !important;
+  color: #ffffff !important;
+}
+
+.stage-datapartner-panel .partner-card.selected {
+  border: 2px solid #0056cc !important;
+  background-color: rgba(0, 86, 204, 0.03) !important;
+}
+
+.stage-datapartner-panel .partner-card.selected::after {
+  background-color: #0056cc !important;
+}
