@@ -1,6 +1,19 @@
 // OVK ID Landscape Map - Application Logic
 
 document.addEventListener("DOMContentLoaded", () => {
+  // Abwärtskompatibilität für verschachtelte Publisher-Konfiguration
+  if (window.OVK_LANDSCAPE_CONFIG && !window.OVK_LANDSCAPE_CONFIG.publishers) {
+    window.OVK_LANDSCAPE_CONFIG.publishers = [];
+    window.OVK_LANDSCAPE_CONFIG.vermarkter.forEach(v => {
+      if (v.publishers) {
+        v.publishers.forEach(p => {
+          p.vermarkterId = v.id;
+          window.OVK_LANDSCAPE_CONFIG.publishers.push(p);
+        });
+      }
+    });
+  }
+
   // Global State - Selections for each of the 5 stages
   let selectedUsecaseId = null;
   let selectedDspId = null;
@@ -55,6 +68,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const sorted = [...OVK_LANDSCAPE_CONFIG.dsps].sort((a, b) => a.name.localeCompare(b.name, 'de'));
     sorted.forEach(item => {
       const card = createCard(item.id, item.name, "", "dsp");
+      appendIdBadges(card, item.supportedIds);
       listDsps.appendChild(card);
     });
   }
@@ -87,6 +101,7 @@ document.addEventListener("DOMContentLoaded", () => {
             return uc ? uc.name : uid;
           }).join(", ");
           card.innerHTML += `<div class="partner-card-desc">Usecases: ${ucNames}</div>`;
+          appendIdBadges(card, item.supportedIds);
         }
         
         listSsps.appendChild(card);
@@ -99,6 +114,8 @@ document.addEventListener("DOMContentLoaded", () => {
     const sorted = [...OVK_LANDSCAPE_CONFIG.vermarkter].sort((a, b) => a.name.localeCompare(b.name, 'de'));
     sorted.forEach(item => {
       const card = createCard(item.id, item.name, item.description, "vermarkter");
+      const inheritedIds = getVermarkterInheritedIds(item.id);
+      appendIdBadges(card, inheritedIds);
       listVermarkters.appendChild(card);
     });
   }
@@ -138,6 +155,7 @@ document.addEventListener("DOMContentLoaded", () => {
           }
         }
         
+        appendIdBadges(card, item.supportedIds);
         listPublishers.appendChild(card);
       });
     });
@@ -172,6 +190,72 @@ document.addEventListener("DOMContentLoaded", () => {
     wrapper.innerHTML = svgContent;
     wrapper.setAttribute("title", tooltip);
     return wrapper;
+  }
+
+  function getVermarkterInheritedIds(vermarkterId) {
+    const parentPublishers = OVK_LANDSCAPE_CONFIG.publishers.filter(p => p.vermarkterId === vermarkterId);
+    const idsSet = new Set();
+    parentPublishers.forEach(p => {
+      if (p.supportedIds) {
+        p.supportedIds.forEach(id => idsSet.add(id));
+      }
+    });
+    // Maintain a consistent order based on the global ids definition list
+    return OVK_LANDSCAPE_CONFIG.ids
+      .map(idDef => idDef.id)
+      .filter(id => idsSet.has(id));
+  }
+
+  function appendIdBadges(card, supportedIds) {
+    if (!supportedIds || supportedIds.length === 0) return;
+    
+    const badgeContainer = document.createElement("div");
+    badgeContainer.className = "partner-card-ids";
+    
+    supportedIds.forEach(id => {
+      const idDef = OVK_LANDSCAPE_CONFIG.ids.find(i => i.id === id);
+      if (idDef) {
+        const badge = document.createElement("span");
+        badge.className = `id-badge badge-${id}`;
+        badge.style.backgroundColor = idDef.color;
+        badge.style.color = idDef.textColor || "#ffffff";
+        badge.textContent = idDef.shortName;
+        badge.setAttribute("title", idDef.name);
+        badgeContainer.appendChild(badge);
+      }
+    });
+    
+    card.appendChild(badgeContainer);
+  }
+
+  function getIdsDetailsHtml(supportedIds, inherited = false) {
+    if (!supportedIds || supportedIds.length === 0) {
+      return `<p style="margin-top: 0.5rem;"><strong>Unterstützte ID-Systeme:</strong> Keine direkt unterstützen IDs (oder Standard-Durchleitung)</p>`;
+    }
+
+    const titleText = inherited ? "Vererbte ID-Systeme (von Publishern)" : "Unterstützte ID-Systeme";
+    let html = `<div style="margin-top: 0.75rem;"><strong>${titleText}:</strong>`;
+    html += `<div class="drawer-ids-list" style="display: flex; flex-direction: column; gap: 6px; margin-top: 6px;">`;
+
+    supportedIds.forEach(id => {
+      const idDef = OVK_LANDSCAPE_CONFIG.ids.find(i => i.id === id);
+      if (idDef) {
+        html += `
+          <div style="display: flex; align-items: flex-start; gap: 8px;">
+            <span class="id-badge" style="background-color: ${idDef.color}; color: ${idDef.textColor || '#ffffff'}; margin-top: 2px; padding: 1px 5px; font-size: 0.65rem; font-weight: 600; border-radius: 3px; text-transform: uppercase; letter-spacing: 0.02em; display: inline-block; white-space: nowrap;">
+              ${idDef.shortName}
+            </span>
+            <div>
+              <span style="font-weight: 600; font-size: 0.9rem;">${idDef.name}</span>
+              ${idDef.description ? `<div style="font-size: 0.8rem; color: var(--color-text-light); line-height: 1.3;">${idDef.description}</div>` : ""}
+            </div>
+          </div>
+        `;
+      }
+    });
+
+    html += `</div></div>`;
+    return html;
   }
 
   // Card element helper creator
@@ -500,10 +584,13 @@ document.addEventListener("DOMContentLoaded", () => {
         return v ? v.name : vid;
       }).join(", ");
 
+      const idsHtml = getIdsDetailsHtml(item.supportedIds);
+
       htmlContent = `
         <p><strong>Unterstützte Usecases:</strong> ${ucNames}</p>
         <p><strong>Kompatible SSPs:</strong> ${sspNames}</p>
         <p><strong>Kompatible Vermarkter:</strong> ${vNames}</p>
+        ${idsHtml}
         <p style="margin-top: 0.5rem;"><em>Klicken Sie auf die DSP, um die Ansicht auf diesen Filter einzuschränken.</em></p>
       `;
     } else if (type === "ssp") {
@@ -530,8 +617,11 @@ document.addEventListener("DOMContentLoaded", () => {
         htmlContent += `<p><strong>Unterstützte Usecases:</strong> ${ucNames}</p>`;
       }
       
+      const idsHtml = getIdsDetailsHtml(item.supportedIds);
+
       htmlContent += `
         <p><strong>Angebundene Vermarkter:</strong> ${vNames}</p>
+        ${idsHtml}
         <p style="margin-top: 0.5rem;"><em>Klicken Sie auf die SSP, um die Ansicht auf diesen Filter einzuschränken.</em></p>
       `;
     } else if (type === "vermarkter") {
@@ -539,18 +629,23 @@ document.addEventListener("DOMContentLoaded", () => {
       title = `Vermarkter: ${item.name}`;
       
       const vPublishers = OVK_LANDSCAPE_CONFIG.publishers.filter(p => p.vermarkterId === id).map(p => p.name).join(", ");
+      const inheritedIds = getVermarkterInheritedIds(id);
+      const idsHtml = getIdsDetailsHtml(inheritedIds, true);
 
       htmlContent = `
         <p><strong>Beschreibung:</strong> ${item.description}</p>
         <p><strong>Zugeordnete Publisher:</strong> ${vPublishers}</p>
+        ${idsHtml}
         <p style="margin-top: 0.5rem;"><em>Klicken Sie auf den Vermarkter, um die Ansicht auf diesen Filter einzuschränken.</em></p>
       `;
     } else if (type === "publisher") {
       const item = OVK_LANDSCAPE_CONFIG.publishers.find(p => p.id === id);
       const parentV = OVK_LANDSCAPE_CONFIG.vermarkter.find(v => v.id === item.vermarkterId);
       title = `Publisher: ${item.name}`;
+      const idsHtml = getIdsDetailsHtml(item.supportedIds);
       htmlContent = `
         <p><strong>Vermarkter-Zuordnung:</strong> ${parentV ? parentV.name : item.vermarkterId}</p>
+        ${idsHtml}
         <p style="margin-top: 0.5rem;"><em>Klicken Sie auf den Publisher, um die Ansicht auf diesen Filter einzuschränken.</em></p>
       `;
     }
