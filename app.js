@@ -1,17 +1,54 @@
 // OVK ID Landscape Map - Application Logic
 
 document.addEventListener("DOMContentLoaded", () => {
-  // Abwärtskompatibilität für verschachtelte Publisher-Konfiguration
-  if (window.OVK_LANDSCAPE_CONFIG && !window.OVK_LANDSCAPE_CONFIG.publishers) {
-    window.OVK_LANDSCAPE_CONFIG.publishers = [];
-    window.OVK_LANDSCAPE_CONFIG.vermarkter.forEach(v => {
-      if (v.publishers) {
-        v.publishers.forEach(p => {
-          p.vermarkterId = v.id;
-          window.OVK_LANDSCAPE_CONFIG.publishers.push(p);
-        });
-      }
-    });
+  // Abwärtskompatibilität und Normalisierung für ID-Systeme (Case-Insensitivity)
+  if (window.OVK_LANDSCAPE_CONFIG) {
+    // 1. IDs Register normalisieren
+    if (Array.isArray(window.OVK_LANDSCAPE_CONFIG.ids)) {
+      window.OVK_LANDSCAPE_CONFIG.ids.forEach(idDef => {
+        if (idDef.id) idDef.id = idDef.id.toLowerCase();
+      });
+    }
+
+    // 2. DSPs normalisieren
+    if (Array.isArray(window.OVK_LANDSCAPE_CONFIG.dsps)) {
+      window.OVK_LANDSCAPE_CONFIG.dsps.forEach(dsp => {
+        if (Array.isArray(dsp.supportedIds)) {
+          dsp.supportedIds = dsp.supportedIds.map(id => id.toLowerCase());
+        }
+      });
+    }
+
+    // 3. SSPs normalisieren
+    if (Array.isArray(window.OVK_LANDSCAPE_CONFIG.ssps)) {
+      window.OVK_LANDSCAPE_CONFIG.ssps.forEach(ssp => {
+        if (Array.isArray(ssp.supportedIds)) {
+          ssp.supportedIds = ssp.supportedIds.map(id => id.toLowerCase());
+        }
+      });
+    }
+
+    // 4. Vermarkter & Publisher normalisieren und abflachen
+    if (!window.OVK_LANDSCAPE_CONFIG.publishers) {
+      window.OVK_LANDSCAPE_CONFIG.publishers = [];
+      window.OVK_LANDSCAPE_CONFIG.vermarkter.forEach(v => {
+        if (v.publishers) {
+          v.publishers.forEach(p => {
+            p.vermarkterId = v.id;
+            if (Array.isArray(p.supportedIds)) {
+              p.supportedIds = p.supportedIds.map(id => id.toLowerCase());
+            }
+            window.OVK_LANDSCAPE_CONFIG.publishers.push(p);
+          });
+        }
+      });
+    } else {
+      window.OVK_LANDSCAPE_CONFIG.publishers.forEach(p => {
+        if (Array.isArray(p.supportedIds)) {
+          p.supportedIds = p.supportedIds.map(id => id.toLowerCase());
+        }
+      });
+    }
   }
 
   // Global State - Selections for each of the 5 stages

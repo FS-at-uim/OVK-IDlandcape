@@ -64,8 +64,9 @@ try {
     config.ids.forEach((idObj, idx) => {
       if (!idObj.id) logError(`ID an Index ${idx} fehlt das Feld 'id'.`);
       else {
-        if (registeredIds.has(idObj.id)) logError(`ID-Register enthält Duplikat: '${idObj.id}'`);
-        registeredIds.add(idObj.id);
+        const normalizedId = idObj.id.toLowerCase();
+        if (registeredIds.has(normalizedId)) logError(`ID-Register enthält Duplikat: '${idObj.id}'`);
+        registeredIds.add(normalizedId);
       }
       if (!idObj.name) logError(`ID '${idObj.id || idx}' fehlt das Feld 'name'.`);
       if (!idObj.shortName) logError(`ID '${idObj.id || idx}' fehlt das Feld 'shortName'.`);
@@ -102,7 +103,7 @@ try {
       
       if (Array.isArray(dsp.supportedIds)) {
         dsp.supportedIds.forEach(id => {
-          if (!registeredIds.has(id)) {
+          if (!registeredIds.has(id.toLowerCase())) {
             logError(`DSP '${dspName}' verweist auf nicht registriertes ID-System: '${id}'`);
           }
         });
@@ -129,7 +130,7 @@ try {
 
       if (Array.isArray(ssp.supportedIds)) {
         ssp.supportedIds.forEach(id => {
-          if (!registeredIds.has(id)) {
+          if (!registeredIds.has(id.toLowerCase())) {
             logError(`SSP '${sspName}' verweist auf nicht registriertes ID-System: '${id}'`);
           }
         });
@@ -170,7 +171,7 @@ try {
           
           if (Array.isArray(p.supportedIds)) {
             p.supportedIds.forEach(id => {
-              if (!registeredIds.has(id)) {
+              if (!registeredIds.has(id.toLowerCase())) {
                 logError(`Publisher '${pName}' unter Vermarkter '${vName}' verweist auf nicht registriertes ID-System: '${id}'`);
               }
             });
