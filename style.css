@@ -768,10 +768,10 @@ a:hover {
 
 .id-badge {
   font-size: 0.62rem;
-  font-weight: 700;
+  font-weight: 500;
   padding: 1px 5px;
   border-radius: 3px;
-  text-transform: uppercase;
+  
   letter-spacing: 0.02em;
   display: inline-block;
   white-space: nowrap;
