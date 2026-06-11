@@ -615,6 +615,9 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (selectedUsecaseId === "targeting") {
       if (Array.isArray(OVK_LANDSCAPE_CONFIG.dataPartners)) {
         OVK_LANDSCAPE_CONFIG.dataPartners.forEach(dp => {
+          if (selectedDataPartnerId && dp.id !== selectedDataPartnerId) {
+            return;
+          }
           const hasCompatiblePath = allPaths.some(path => {
             if (path.usecase !== "targeting") return false;
             if (selectedDspId && path.dsp !== selectedDspId) return false;

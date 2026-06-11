@@ -30,7 +30,7 @@ window.OVK_LANDSCAPE_CONFIG = {
       name: "The Trade Desk",
       logo: "TTD",
       supportedUsecases: ["fc", "targeting"],
-      supportedSSPs: ["pubmatic", "index_exchange", "magnite", "xandr", "yieldlab", "smartclip"],
+      supportedSSPs: ["pubmatic", "index_exchange", "magnite", "xandr", "yieldlab", "smartclip", "equativ"],
       supportedVermarkter: ["ad_alliance", "seven_one_media", "media_impact", "uim", "iqd"],
       supportedIds: ["utiq", "netid_utiq", "netid"]
     },
@@ -39,7 +39,7 @@ window.OVK_LANDSCAPE_CONFIG = {
       name: "Active Agent",
       logo: "AA",
       supportedUsecases: ["targeting"],
-      supportedSSPs: ["pubmatic", "index_exchange", "magnite", "xandr", "yieldlab", "smartclip"],
+      supportedSSPs: ["pubmatic", "index_exchange", "magnite", "xandr", "yieldlab", "smartclip", "equativ"],
       supportedVermarkter: ["ad_alliance", "media_impact", "stroeer", "uim", "iqd"],
       supportedIds: ["utiq", "netid_utiq", "netid"]
     },
@@ -57,7 +57,7 @@ window.OVK_LANDSCAPE_CONFIG = {
       name: "DV360",
       logo: "DV360",
       supportedUsecases: [],
-      supportedSSPs: ["pubmatic", "index_exchange", "magnite", "xandr", "yieldlab"],
+      supportedSSPs: ["pubmatic", "index_exchange", "magnite", "xandr", "yieldlab", "equativ"],
       supportedVermarkter: ["media_impact", "seven_one_media", "uim", "iqd", "ad_alliance"],
       supportedIds: []
     }
@@ -65,6 +65,14 @@ window.OVK_LANDSCAPE_CONFIG = {
 
   // 3. Stufe: SSP (Supply Side Platforms)
   ssps: [
+    {
+      id: "equativ",
+      name: "Equativ",
+      category: "curation",
+      supportedUsecases: ["fc", "targeting"],
+      supportedVermarkter: ["ad_alliance", "seven_one_media", "uim"],
+      supportedIds: ["utiq", "netid_utiq", "netid"]
+    },
     {
       id: "pubmatic",
       name: "PubMatic",
