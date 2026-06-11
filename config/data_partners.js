@@ -9,9 +9,9 @@ if (!window.OVK_LANDSCAPE_CONFIG.dataPartners) {
 
 window.OVK_LANDSCAPE_CONFIG.dataPartners.push(
   {
-    id: "emetriq",
-    name: "Emetriq",
-    description: "3rd party data provider",
+    id: "iq_data",
+    name: "IQ digital data",
+    description: "Daten von IQ digital",
     supportedIds: ["utiq"],
     supportedDSPs: ["ttd", "adform", "active_agent"],
     supportedSSPs: ["pubmatic", "index_exchange"]
