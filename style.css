@@ -296,10 +296,55 @@ a:hover {
   box-shadow: none;
 }
 
-/* Landscape Grid (5 Stages) */
+/* Stage 1: Horizontal Usecase Selector Panel */
+.usecase-selector-panel {
+  background-color: #ffffff;
+  border-radius: 12px;
+  border: 1px solid var(--color-border);
+  padding: 1rem 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  box-shadow: var(--shadow-sm);
+  transition: box-shadow var(--transition-normal);
+  border-bottom: 3px solid var(--color-ovk-red);
+}
+
+.usecase-selector-panel:hover {
+  box-shadow: var(--shadow-md);
+}
+
+.usecase-panel-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  min-width: 160px;
+}
+
+.usecase-header-text h2 {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--color-text-charcoal);
+  margin: 0;
+}
+
+.usecase-panel-cards {
+  display: flex;
+  gap: 1rem;
+  flex: 1;
+}
+
+.usecase-panel-cards .partner-card {
+  margin-bottom: 0;
+  flex: 1;
+  max-width: 450px;
+  min-height: 58px;
+}
+
+/* Landscape Grid (4 Columns, Publisher double width) */
 .landscape-grid {
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
+  grid-template-columns: 1fr 1.15fr 1.15fr 2fr;
   gap: 1.25rem;
   width: 100%;
 }
@@ -344,13 +389,8 @@ a:hover {
   border: 1px solid rgba(0,0,0,0.05);
 }
 
-.stage-column:nth-child(1) .stage-badge,
-.stage-column:nth-child(1) .stage-header {
-  border-bottom-color: var(--color-ovk-red);
-}
-
-.stage-column:nth-child(2) .stage-badge,
-.stage-column:nth-child(2) .stage-header {
+.stage-column .stage-badge,
+.stage-column .stage-header {
   border-bottom-color: var(--color-ovk-blue);
 }
 
@@ -464,7 +504,14 @@ a:hover {
 }
 
 /* Group container for Publisher (nested look) */
+#list-publishers {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.5rem;
+}
+
 .publisher-group-header {
+  grid-column: span 2;
   font-size: 0.72rem;
   font-weight: 700;
   color: var(--color-text-light);
@@ -627,17 +674,33 @@ a:hover {
 /* Responsive Grid adjustments */
 @media (max-width: 1200px) {
   .landscape-grid {
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: 1fr 1fr;
   }
-  .stage-column:nth-child(4),
-  .stage-column:nth-child(5) {
-    grid-column: span 1;
+  #stage-publisher {
+    grid-column: span 2;
+  }
+  .usecase-selector-panel {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+  .usecase-panel-cards {
+    width: 100%;
   }
 }
 
 @media (max-width: 768px) {
   .landscape-grid {
     grid-template-columns: 1fr;
+  }
+  #stage-publisher {
+    grid-column: span 1;
+  }
+  #list-publishers {
+    grid-template-columns: 1fr;
+  }
+  .usecase-panel-cards {
+    flex-direction: column;
   }
   .main-header {
     height: auto;
@@ -658,4 +721,38 @@ a:hover {
   .btn-reset {
     justify-content: center;
   }
+}
+
+/* Publisher Inventory Type Icons */
+.publisher-inventory-types {
+  display: inline-flex;
+  gap: 4px;
+  align-items: center;
+  margin-left: 6px;
+  vertical-align: middle;
+}
+
+.inventory-icon-wrapper {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 4px;
+  background-color: #f1f5f9;
+  color: #64748b;
+  border: 1px solid #e2e8f0;
+  transition: all var(--transition-fast);
+  cursor: help;
+}
+
+.inventory-icon-wrapper:hover {
+  background-color: #e0f2fe;
+  color: var(--color-ovk-blue);
+  border-color: var(--color-ovk-blue-light);
+  transform: translateY(-1px);
+}
+
+.inventory-icon-wrapper svg {
+  display: block;
 }

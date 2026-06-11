@@ -8,6 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="icon" type="image/png" sizes="16x16" href="https://www.ovk.de/wp-content/themes/bvdw/assets/img/favicon/favicon-16x16.png?v=.9">
   <!-- Stylesheets -->
   <link rel="stylesheet" href="style.css">
 </head>
@@ -38,7 +39,6 @@
   <section class="hero-section">
     <div class="hero-container">
       <h1>OVK ID Landscape Map</h1>
-      
     </div>
   </section>
 
@@ -61,21 +61,23 @@
       </button>
     </div>
 
-    <!-- Landscape Grid (5 columns) -->
-    <div class="landscape-grid">
-      
-      <!-- Stage 1: Usecase -->
-      <div class="stage-column" id="stage-usecase" data-stage="usecase">
-        <div class="stage-header">
-          <div class="stage-badge">1</div>
+    <!-- Stage 1: Usecase Selector Panel (Horizontal) -->
+    <div class="usecase-selector-panel" id="stage-usecase" data-stage="usecase">
+      <div class="usecase-panel-header">
+        <div class="stage-badge">1</div>
+        <div class="usecase-header-text">
           <h2>Usecase</h2>
           <span class="stage-subtitle">Vorselektion</span>
         </div>
-        <div class="cards-list" id="list-usecases">
-          <!-- Dynamically filled -->
-        </div>
       </div>
+      <div class="usecase-panel-cards" id="list-usecases">
+        <!-- Dynamically filled -->
+      </div>
+    </div>
 
+    <!-- Landscape Grid (4 Columns, Publisher double width) -->
+    <div class="landscape-grid">
+      
       <!-- Stage 2: DSP -->
       <div class="stage-column" id="stage-dsp" data-stage="dsp">
         <div class="stage-header">
@@ -105,7 +107,7 @@
         <div class="stage-header">
           <div class="stage-badge">4</div>
           <h2>Vermarkter</h2>
-          <span class="stage-subtitle">Sales & Premium</span>
+          <span class="stage-subtitle">Sales Houses</span>
         </div>
         <div class="cards-list" id="list-vermarkters">
           <!-- Dynamically filled -->
@@ -117,7 +119,7 @@
         <div class="stage-header">
           <div class="stage-badge">5</div>
           <h2>Publisher</h2>
-          <span class="stage-subtitle">Endmedien (n:1)</span>
+          <span class="stage-subtitle">Media</span>
         </div>
         <div class="cards-list" id="list-publishers">
           <!-- Dynamically filled -->

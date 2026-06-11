@@ -135,33 +135,33 @@ const OVK_LANDSCAPE_CONFIG = {
   // 5. Stufe: Publisher (einem Vermarkter zugeordnet)
   publishers: [
     // Ad Alliance
-    { id: "rtl", name: "RTL.de", vermarkterId: "ad_alliance" },
-    { id: "ntv", name: "n-tv.de", vermarkterId: "ad_alliance" },
-    { id: "stern", name: "stern.de", vermarkterId: "ad_alliance" },
+    { id: "rtl", name: "RTL.de", vermarkterId: "ad_alliance", supportedInventoryTypes: ["desktop", "mobile", "ctv"] },
+    { id: "ntv", name: "n-tv.de", vermarkterId: "ad_alliance", supportedInventoryTypes: ["desktop", "mobile", "ctv"] },
+    { id: "stern", name: "stern.de", vermarkterId: "ad_alliance", supportedInventoryTypes: ["desktop", "mobile", "app"] },
 
     // Media Impact
-    { id: "bild", name: "Bild.de", vermarkterId: "media_impact" },
-    { id: "welt", name: "Welt.de", vermarkterId: "media_impact" },
-    { id: "business_insider", name: "Business Insider", vermarkterId: "media_impact" },
+    { id: "bild", name: "Bild.de", vermarkterId: "media_impact", supportedInventoryTypes: ["desktop", "mobile", "app", "ctv"] },
+    { id: "welt", name: "Welt.de", vermarkterId: "media_impact", supportedInventoryTypes: ["desktop", "mobile", "app"] },
+    { id: "business_insider", name: "Business Insider", vermarkterId: "media_impact", supportedInventoryTypes: ["desktop", "mobile"] },
 
     // Seven.One Media
-    { id: "prosieben", name: "ProSieben.de", vermarkterId: "seven_one_media" },
-    { id: "sat1", name: "Sat1.de", vermarkterId: "seven_one_media" },
-    { id: "joyn", name: "Joyn.de", vermarkterId: "seven_one_media" },
+    { id: "prosieben", name: "ProSieben.de", vermarkterId: "seven_one_media", supportedInventoryTypes: ["desktop", "mobile", "ctv"] },
+    { id: "sat1", name: "Sat1.de", vermarkterId: "seven_one_media", supportedInventoryTypes: ["desktop", "mobile", "ctv"] },
+    { id: "joyn", name: "Joyn.de", vermarkterId: "seven_one_media", supportedInventoryTypes: ["desktop", "mobile", "app", "ctv"] },
 
     // Ströer
-    { id: "tonline", name: "t-online.de", vermarkterId: "stroeer" },
-    { id: "watson", name: "watson.de", vermarkterId: "stroeer" },
-    { id: "giga", name: "giga.de", vermarkterId: "stroeer" },
+    { id: "tonline", name: "t-online.de", vermarkterId: "stroeer", supportedInventoryTypes: ["desktop", "mobile"] },
+    { id: "watson", name: "watson.de", vermarkterId: "stroeer", supportedInventoryTypes: ["desktop", "mobile"] },
+    { id: "giga", name: "giga.de", vermarkterId: "stroeer", supportedInventoryTypes: ["desktop", "mobile", "app"] },
 
     // United Internet Media
-    { id: "webde", name: "Web.de", vermarkterId: "uim" },
-    { id: "gmx", name: "GMX.de", vermarkterId: "uim" },
+    { id: "webde", name: "Web.de", vermarkterId: "uim", supportedInventoryTypes: ["desktop", "mobile", "app"] },
+    { id: "gmx", name: "GMX.de", vermarkterId: "uim", supportedInventoryTypes: ["desktop", "mobile", "app"] },
 
     // IQ Digital Media
-    { id: "zeit", name: "Zeit.de", vermarkterId: "iqd" },
-    { id: "faz", name: "Faz.net", vermarkterId: "iqd" },
-    { id: "harper_collins", name: "Harper Collins", vermarkterId: "iqd" }
+    { id: "zeit", name: "Zeit.de", vermarkterId: "iqd", supportedInventoryTypes: ["desktop", "mobile"] },
+    { id: "faz", name: "Faz.net", vermarkterId: "iqd", supportedInventoryTypes: ["desktop", "mobile"] },
+    { id: "harper_collins", name: "Harper Collins", vermarkterId: "iqd", supportedInventoryTypes: ["desktop", "mobile"] }
 
   ]
 };
