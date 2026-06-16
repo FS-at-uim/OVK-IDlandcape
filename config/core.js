@@ -18,8 +18,13 @@ window.OVK_LANDSCAPE_CONFIG = {
     },
     {
       id: "targeting",
-      name: "Targeting",
+      name: "Targeting (Data Partner)",
       description: "Zielgruppenspezifische Ansprache basierend auf ID-Lösungen."
+    },
+    {
+      id: "targeting_pre",
+      name: "Targeting (Pretargeted Pub. Deals)",
+      description: "Pre-Targeting auf Publisher-Seite gesteuert durch die SSP."
     }
   ],
 
@@ -29,7 +34,7 @@ window.OVK_LANDSCAPE_CONFIG = {
       id: "ttd",
       name: "The Trade Desk",
       logo: "TTD",
-      supportedUsecases: ["fc", "targeting"],
+      supportedUsecases: ["fc", "targeting", "targeting_pre"],
       supportedSSPs: ["pubmatic", "index_exchange", "magnite", "xandr", "yieldlab", "smartclip", "equativ"],
       supportedVermarkter: ["ad_alliance", "seven_one_media", "media_impact", "uim", "iqd"],
       supportedIds: ["utiq", "netid_utiq", "netid"]
@@ -38,7 +43,7 @@ window.OVK_LANDSCAPE_CONFIG = {
       id: "active_agent",
       name: "Active Agent",
       logo: "AA",
-      supportedUsecases: ["targeting"],
+      supportedUsecases: ["targeting", "targeting_pre"],
       supportedSSPs: ["pubmatic", "index_exchange", "magnite", "xandr", "yieldlab", "smartclip", "equativ"],
       supportedVermarkter: ["ad_alliance", "media_impact", "stroeer", "uim", "iqd"],
       supportedIds: ["utiq", "netid_utiq", "netid"]
@@ -47,7 +52,7 @@ window.OVK_LANDSCAPE_CONFIG = {
       id: "adform",
       name: "Adform",
       logo: "AD",
-      supportedUsecases: ["fc"],
+      supportedUsecases: ["fc", "targeting_pre"],
       supportedSSPs: ["pubmatic", "index_exchange", "magnite", "xandr", "yieldlab", "smartclip"],
       supportedVermarkter: ["media_impact", "seven_one_media", "uim"],
       supportedIds: ["utiq", "netid_utiq", "netid"]
@@ -56,7 +61,7 @@ window.OVK_LANDSCAPE_CONFIG = {
       id: "dv360",
       name: "DV360",
       logo: "DV360",
-      supportedUsecases: [],
+      supportedUsecases: ["targeting_pre"],
       supportedSSPs: ["pubmatic", "index_exchange", "magnite", "xandr", "yieldlab", "equativ"],
       supportedVermarkter: ["media_impact", "seven_one_media", "uim", "iqd", "ad_alliance"],
       supportedIds: []
@@ -69,7 +74,7 @@ window.OVK_LANDSCAPE_CONFIG = {
       id: "equativ",
       name: "Equativ",
       category: "curation",
-      supportedUsecases: ["fc", "targeting"],
+      supportedUsecases: ["fc", "targeting", "targeting_pre"],
       supportedVermarkter: ["ad_alliance", "seven_one_media", "uim"],
       supportedIds: ["utiq", "netid_utiq", "netid"]
     },
@@ -77,7 +82,7 @@ window.OVK_LANDSCAPE_CONFIG = {
       id: "pubmatic",
       name: "PubMatic",
       category: "curation",
-      supportedUsecases: ["fc", "targeting"],
+      supportedUsecases: ["fc", "targeting", "targeting_pre"],
       supportedVermarkter: ["ad_alliance", "seven_one_media", "uim"],
       supportedIds: ["utiq", "netid_utiq"]
     },
@@ -85,7 +90,7 @@ window.OVK_LANDSCAPE_CONFIG = {
       id: "index_exchange",
       name: "Index Exchange",
       category: "curation",
-      supportedUsecases: ["targeting"],
+      supportedUsecases: ["targeting", "targeting_pre"],
       supportedVermarkter: ["ad_alliance", "media_impact", "seven_one_media", "uim", "iqd"],
       supportedIds: ["utiq", "netid_utiq"]
     },
@@ -93,7 +98,7 @@ window.OVK_LANDSCAPE_CONFIG = {
       id: "magnite",
       name: "Magnite",
       category: "curation",
-      supportedUsecases: ["targeting"],
+      supportedUsecases: ["targeting", "targeting_pre"],
       supportedVermarkter: ["seven_one_media", "stroeer", "uim"],
       supportedIds: ["utiq", "netid_utiq"]
     },
@@ -101,7 +106,7 @@ window.OVK_LANDSCAPE_CONFIG = {
       id: "xandr",
       name: "Xandr",
       category: "curation",
-      supportedUsecases: ["targeting"],
+      supportedUsecases: ["targeting", "targeting_pre"],
       supportedVermarkter: ["media_impact", "stroeer", "uim", "iqd"],
       supportedIds: ["netid"]
     },
@@ -109,15 +114,16 @@ window.OVK_LANDSCAPE_CONFIG = {
       id: "yieldlab",
       name: "Yieldlab",
       category: "standard",
+supportedUsecases: ["targeting_pre"],
       supportedVermarkter: ["media_impact", "stroeer", "uim", "iqd"],
-      supportedIds: []
+      supportedIds: ["netid", "utiq"]
     },
     {
       id: "smartclip",
       name: "Smartclip",
       category: "standard",
       supportedVermarkter: ["ad_alliance"],
-      supportedIds: []
+      supportedIds: ["netid", "utiq"]
     }
   ],
   dataPartners: []

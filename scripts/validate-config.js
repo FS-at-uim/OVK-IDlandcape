@@ -87,11 +87,15 @@ try {
   }
 
   // 3. Usecases validieren
+  const registeredUsecaseIds = new Set();
   if (!Array.isArray(config.usecases)) {
     logError('config.usecases muss ein Array sein.');
   } else {
     config.usecases.forEach((uc, idx) => {
       if (!uc.id) logError(`Usecase an Index ${idx} fehlt 'id'.`);
+      else {
+        registeredUsecaseIds.add(uc.id);
+      }
       if (!uc.name) logError(`Usecase '${uc.id || idx}' fehlt 'name'.`);
     });
   }
@@ -109,7 +113,15 @@ try {
       }
       if (!dsp.name) logError(`DSP '${dsp.id || idx}' fehlt 'name'.`);
       if (!dsp.logo) logError(`DSP '${dspName}' fehlt 'logo'.`);
-      if (!Array.isArray(dsp.supportedUsecases)) logError(`DSP '${dspName}': supportedUsecases muss ein Array sein.`);
+      if (!Array.isArray(dsp.supportedUsecases)) {
+        logError(`DSP '${dspName}': supportedUsecases muss ein Array sein.`);
+      } else {
+        dsp.supportedUsecases.forEach(ucId => {
+          if (!registeredUsecaseIds.has(ucId)) {
+            logError(`DSP '${dspName}' verweist auf nicht registrierten Usecase: '${ucId}'`);
+          }
+        });
+      }
       if (!Array.isArray(dsp.supportedSSPs)) logError(`DSP '${dspName}': supportedSSPs muss ein Array sein.`);
       if (!Array.isArray(dsp.supportedVermarkter)) logError(`DSP '${dspName}': supportedVermarkter muss ein Array sein.`);
       
@@ -138,6 +150,13 @@ try {
       }
       if (!ssp.name) logError(`SSP '${ssp.id || idx}' fehlt 'name'.`);
       if (!ssp.category) logError(`SSP '${sspName}' fehlt 'category'.`);
+      if (Array.isArray(ssp.supportedUsecases)) {
+        ssp.supportedUsecases.forEach(ucId => {
+          if (!registeredUsecaseIds.has(ucId)) {
+            logError(`SSP '${sspName}' verweist auf nicht registrierten Usecase: '${ucId}'`);
+          }
+        });
+      }
       if (!Array.isArray(ssp.supportedVermarkter)) logError(`SSP '${sspName}': supportedVermarkter muss ein Array sein.`);
 
       if (Array.isArray(ssp.supportedIds)) {

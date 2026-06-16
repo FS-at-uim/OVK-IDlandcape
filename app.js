@@ -56,7 +56,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     
     for (const file of files) {
       try {
-        const response = await fetch(file + "?v=1.0.1");
+        const response = await fetch(file + "?v=1.0.3");
         if (!response.ok) {
           throw new Error(`HTTP ${response.status} beim Laden von ${file}`);
         }
@@ -561,6 +561,13 @@ document.addEventListener("DOMContentLoaded", async () => {
       const uIdToCheck = uId || path.usecase;
       const d = OVK_LANDSCAPE_CONFIG.dsps.find(item => item.id === path.dsp);
       const s = OVK_LANDSCAPE_CONFIG.ssps.find(item => item.id === path.ssp);
+      
+      // Strict rule: if checking targeting_pre, the SSP in the path must support targeting_pre
+      if (uIdToCheck === "targeting_pre") {
+        if (!s || !(s.supportedUsecases || []).includes("targeting_pre")) {
+          return false;
+        }
+      }
       
       const selectedSsp = sId ? OVK_LANDSCAPE_CONFIG.ssps.find(item => item.id === sId) : null;
       const selectedDsp = dId ? OVK_LANDSCAPE_CONFIG.dsps.find(item => item.id === dId) : null;
