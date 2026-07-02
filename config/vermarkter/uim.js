@@ -14,5 +14,8 @@ window.OVK_LANDSCAPE_CONFIG.vermarkter.push({
     { type: "mobile", coverage: 95 },
     { type: "app", coverage: 80 }
   ],
-  supportedIds: ["netid_utiq", "netid"]
+  supportedIds: [
+    { id: "netid_utiq", coverage: 95 },
+    { id: "netid", coverage: 90 }
+  ]
 });

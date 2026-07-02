@@ -198,9 +198,19 @@ try {
         });
       }
       if (Array.isArray(v.supportedIds)) {
-        v.supportedIds.forEach(id => {
-          if (!registeredIds.has(id.toLowerCase())) {
-            logError(`Vermarkter '${vName}' verweist auf nicht registriertes ID-System: '${id}'`);
+        v.supportedIds.forEach((idObj, idIdx) => {
+          const idStr = typeof idObj === 'string' ? idObj : idObj.id;
+          
+          if (!idStr) {
+            logError(`Vermarkter '${vName}', supportedIds Index ${idIdx}: fehlt 'id'.`);
+          } else if (!registeredIds.has(idStr.toLowerCase())) {
+            logError(`Vermarkter '${vName}' verweist auf nicht registriertes ID-System: '${idStr}'`);
+          }
+          
+          if (typeof idObj === 'object' && idObj !== null) {
+            if (idObj.coverage !== undefined && typeof idObj.coverage !== 'number') {
+              logError(`Vermarkter '${vName}', supportedIds Index ${idIdx}: 'coverage' muss eine Zahl sein.`);
+            }
           }
         });
       } else {

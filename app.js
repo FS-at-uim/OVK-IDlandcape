@@ -54,7 +54,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     
     for (const file of files) {
       try {
-        const response = await fetch(file + "?v=1.0.5");
+        const response = await fetch(file + "?v=1.0.6");
         if (!response.ok) {
           throw new Error(`HTTP ${response.status} beim Laden von ${file}`);
         }
@@ -114,7 +114,10 @@ document.addEventListener("DOMContentLoaded", async () => {
       if (Array.isArray(window.OVK_LANDSCAPE_CONFIG.vermarkter)) {
         window.OVK_LANDSCAPE_CONFIG.vermarkter.forEach(v => {
           if (Array.isArray(v.supportedIds)) {
-            v.supportedIds = v.supportedIds.map(id => id.toLowerCase());
+            v.supportedIds = v.supportedIds.map(idObj => {
+              if (typeof idObj === 'string') return idObj.toLowerCase();
+              return { ...idObj, id: idObj.id.toLowerCase() };
+            });
           }
         });
       }
@@ -267,15 +270,23 @@ document.addEventListener("DOMContentLoaded", async () => {
     const badgeContainer = document.createElement("div");
     badgeContainer.className = "partner-card-ids";
     
-    supportedIds.forEach(id => {
-      const idDef = OVK_LANDSCAPE_CONFIG.ids.find(i => i.id === id);
+    supportedIds.forEach(idObj => {
+      const idStr = typeof idObj === 'string' ? idObj : idObj.id;
+      const coverage = typeof idObj === 'string' ? null : idObj.coverage;
+      const idDef = OVK_LANDSCAPE_CONFIG.ids.find(i => i.id === idStr);
       if (idDef) {
         const badge = document.createElement("span");
-        badge.className = `id-badge badge-${id}`;
+        badge.className = `id-badge badge-${idStr}`;
         badge.style.backgroundColor = idDef.color;
         badge.style.color = idDef.textColor || "#ffffff";
         badge.textContent = idDef.shortName;
-        badge.setAttribute("title", idDef.name);
+        
+        let tooltip = idDef.name;
+        if (coverage !== null && coverage !== undefined) {
+          tooltip += ` - ${coverage}% mit ID verfügbar`;
+        }
+        badge.setAttribute("title", tooltip);
+        
         badgeContainer.appendChild(badge);
       }
     });
@@ -292,8 +303,10 @@ document.addEventListener("DOMContentLoaded", async () => {
     let html = `<div style="margin-top: 0.75rem;"><strong>${titleText}:</strong>`;
     html += `<div class="drawer-ids-list" style="display: flex; flex-direction: column; gap: 6px; margin-top: 6px;">`;
 
-    supportedIds.forEach(id => {
-      const idDef = OVK_LANDSCAPE_CONFIG.ids.find(i => i.id === id);
+    supportedIds.forEach(idObj => {
+      const idStr = typeof idObj === 'string' ? idObj : idObj.id;
+      const coverage = typeof idObj === 'string' ? null : idObj.coverage;
+      const idDef = OVK_LANDSCAPE_CONFIG.ids.find(i => i.id === idStr);
       if (idDef) {
         html += `
           <div style="display: flex; align-items: flex-start; gap: 8px;">
@@ -302,6 +315,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             </span>
             <div>
               <span style="font-weight: 600; font-size: 0.9rem;">${idDef.name}</span>
+              ${coverage !== null && coverage !== undefined ? `<span style="font-size: 0.75rem; margin-left: 6px; padding: 2px 5px; background: #e0f2fe; color: #0056cc; border-radius: 4px; font-weight: 600;">${coverage}% Abdeckung</span>` : ""}
               ${idDef.description ? `<div style="font-size: 0.8rem; color: var(--color-text-light); line-height: 1.3;">${idDef.description}</div>` : ""}
             </div>
           </div>

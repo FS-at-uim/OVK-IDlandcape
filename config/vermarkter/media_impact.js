@@ -15,5 +15,9 @@ window.OVK_LANDSCAPE_CONFIG.vermarkter.push({
     { type: "app", coverage: 75 },
     { type: "ctv", coverage: 60 }
   ],
-  supportedIds: ["utiq", "netid_utiq", "netid"]
+  supportedIds: [
+    { id: "utiq", coverage: 85 },
+    { id: "netid_utiq", coverage: 65 },
+    { id: "netid", coverage: 60 }
+  ]
 });
