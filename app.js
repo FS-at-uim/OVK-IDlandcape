@@ -256,7 +256,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
     
     if (coverage !== null && coverage !== undefined) {
-      tooltip += ` - ${coverage}% mit ID verfügbar`;
+      tooltip += ` ~ ${coverage}% Inventar mit ID verfügbar`;
     }
     
     wrapper.innerHTML = svgContent;
@@ -283,7 +283,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         
         let tooltip = idDef.name;
         if (coverage !== null && coverage !== undefined) {
-          tooltip += ` - ${coverage}% mit ID verfügbar`;
+          tooltip += ` ~ ${coverage}% Inventar mit ID verfügbar`;
         }
         badge.setAttribute("title", tooltip);
         
