@@ -9,9 +9,10 @@ window.OVK_LANDSCAPE_CONFIG.vermarkter.push({
   id: "stroeer",
   name: "Ströer",
   description: "Vermarkter für Out-of-Home und digitale Medien.",
-  publishers: [
-    { id: "tonline", name: "t-online.de", supportedInventoryTypes: ["desktop", "mobile"], supportedIds: [] },
-    { id: "watson", name: "watson.de", supportedInventoryTypes: ["desktop", "mobile"], supportedIds: ["utiq"] },
-    { id: "giga", name: "giga.de", supportedInventoryTypes: ["desktop", "mobile", "app"], supportedIds: [] }
-  ]
+  supportedInventoryTypes: [
+    { type: "desktop", coverage: 95 },
+    { type: "mobile", coverage: 90 },
+    { type: "app", coverage: 60 }
+  ],
+  supportedIds: ["utiq"]
 });

@@ -13,7 +13,6 @@ document.addEventListener("DOMContentLoaded", async () => {
   let selectedDspId = null;
   let selectedSspId = null;
   let selectedVermarkterId = null;
-  let selectedPublisherId = null;
 
   // DOM Elements
   const listUsecases = document.getElementById("list-usecases");
@@ -22,7 +21,6 @@ document.addEventListener("DOMContentLoaded", async () => {
   const listDsps = document.getElementById("list-dsps");
   const listSsps = document.getElementById("list-ssps");
   const listVermarkters = document.getElementById("list-vermarkters");
-  const listPublishers = document.getElementById("list-publishers");
   
   const activeChipsContainer = document.getElementById("active-chips");
   const btnReset = document.getElementById("btn-reset");
@@ -56,7 +54,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     
     for (const file of files) {
       try {
-        const response = await fetch(file + "?v=1.0.3");
+        const response = await fetch(file + "?v=1.0.5");
         if (!response.ok) {
           throw new Error(`HTTP ${response.status} beim Laden von ${file}`);
         }
@@ -112,24 +110,11 @@ document.addEventListener("DOMContentLoaded", async () => {
         });
       }
 
-      // 5. Vermarkter & Publisher normalisieren und abflachen
-      if (!window.OVK_LANDSCAPE_CONFIG.publishers) {
-        window.OVK_LANDSCAPE_CONFIG.publishers = [];
+      // 5. Vermarkter normalisieren
+      if (Array.isArray(window.OVK_LANDSCAPE_CONFIG.vermarkter)) {
         window.OVK_LANDSCAPE_CONFIG.vermarkter.forEach(v => {
-          if (v.publishers) {
-            v.publishers.forEach(p => {
-              p.vermarkterId = v.id;
-              if (Array.isArray(p.supportedIds)) {
-                p.supportedIds = p.supportedIds.map(id => id.toLowerCase());
-              }
-              window.OVK_LANDSCAPE_CONFIG.publishers.push(p);
-            });
-          }
-        });
-      } else {
-        window.OVK_LANDSCAPE_CONFIG.publishers.forEach(p => {
-          if (Array.isArray(p.supportedIds)) {
-            p.supportedIds = p.supportedIds.map(id => id.toLowerCase());
+          if (Array.isArray(v.supportedIds)) {
+            v.supportedIds = v.supportedIds.map(id => id.toLowerCase());
           }
         });
       }
@@ -144,7 +129,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     renderDsps();
     renderSsps();
     renderVermarkters();
-    renderPublishers();
   }
 
   function renderUsecases() {
@@ -218,54 +202,31 @@ document.addEventListener("DOMContentLoaded", async () => {
     const sorted = [...OVK_LANDSCAPE_CONFIG.vermarkter].sort((a, b) => a.name.localeCompare(b.name, 'de'));
     sorted.forEach(item => {
       const card = createCard(item.id, item.name, item.description, "vermarkter");
-      const inheritedIds = getVermarkterInheritedIds(item.id);
-      appendIdBadges(card, inheritedIds);
+      
+      // Add inventory type icons behind name
+      if (item.supportedInventoryTypes && item.supportedInventoryTypes.length > 0) {
+        const h3 = card.querySelector("h3");
+        if (h3) {
+          const iconsSpan = document.createElement("span");
+          iconsSpan.className = "publisher-inventory-types";
+          item.supportedInventoryTypes.forEach(typeObj => {
+            const typeStr = typeof typeObj === 'string' ? typeObj : typeObj.type;
+            const coverage = typeof typeObj === 'string' ? null : typeObj.coverage;
+            const iconWrapper = getInventoryTypeIcon(typeStr, coverage);
+            if (iconWrapper) {
+              iconsSpan.appendChild(iconWrapper);
+            }
+          });
+          h3.appendChild(iconsSpan);
+        }
+      }
+
+      appendIdBadges(card, item.supportedIds);
       listVermarkters.appendChild(card);
     });
   }
 
-  function renderPublishers() {
-    listPublishers.innerHTML = "";
-    
-    // Group publishers by Vermarkter for better representation of n:1 relationship
-    const sortedVermarkters = [...OVK_LANDSCAPE_CONFIG.vermarkter].sort((a, b) => a.name.localeCompare(b.name, 'de'));
-    sortedVermarkters.forEach(v => {
-      const groupHeader = document.createElement("div");
-      groupHeader.className = "publisher-group-header";
-      groupHeader.setAttribute("data-group-vermarkter", v.id);
-      groupHeader.textContent = v.name;
-      listPublishers.appendChild(groupHeader);
-
-      const vPublishers = OVK_LANDSCAPE_CONFIG.publishers.filter(p => p.vermarkterId === v.id);
-      // Sort publishers ascending too for clean layout
-      const sortedPublishers = [...vPublishers].sort((a, b) => a.name.localeCompare(b.name, 'de'));
-      sortedPublishers.forEach(item => {
-        const card = createCard(item.id, item.name, "", "publisher");
-        card.setAttribute("data-vermarkter-id", item.vermarkterId);
-        
-        // Add inventory type icons behind name
-        if (item.supportedInventoryTypes && item.supportedInventoryTypes.length > 0) {
-          const h3 = card.querySelector("h3");
-          if (h3) {
-            const iconsSpan = document.createElement("span");
-            iconsSpan.className = "publisher-inventory-types";
-            item.supportedInventoryTypes.forEach(type => {
-              const iconWrapper = getInventoryTypeIcon(type);
-              if (iconWrapper) {
-                iconsSpan.appendChild(iconWrapper);
-              }
-            });
-            h3.appendChild(iconsSpan);
-          }
-        }
-        
-        appendIdBadges(card, item.supportedIds);
-        listPublishers.appendChild(card);
-      });
-    });
-  }
-
-  function getInventoryTypeIcon(type) {
+  function getInventoryTypeIcon(type, coverage = null) {
     const wrapper = document.createElement("span");
     wrapper.className = `inventory-icon-wrapper icon-${type}`;
     
@@ -291,23 +252,13 @@ document.addEventListener("DOMContentLoaded", async () => {
         break;
     }
     
+    if (coverage !== null && coverage !== undefined) {
+      tooltip += ` - ${coverage}% mit ID verfügbar`;
+    }
+    
     wrapper.innerHTML = svgContent;
     wrapper.setAttribute("title", tooltip);
     return wrapper;
-  }
-
-  function getVermarkterInheritedIds(vermarkterId) {
-    const parentPublishers = OVK_LANDSCAPE_CONFIG.publishers.filter(p => p.vermarkterId === vermarkterId);
-    const idsSet = new Set();
-    parentPublishers.forEach(p => {
-      if (p.supportedIds) {
-        p.supportedIds.forEach(id => idsSet.add(id));
-      }
-    });
-    // Maintain a consistent order based on the global ids definition list
-    return OVK_LANDSCAPE_CONFIG.ids
-      .map(idDef => idDef.id)
-      .filter(id => idsSet.has(id));
   }
 
   function appendIdBadges(card, supportedIds) {
@@ -414,8 +365,6 @@ document.addEventListener("DOMContentLoaded", async () => {
       selectedSspId = (selectedSspId === id) ? null : id;
     } else if (type === "vermarkter") {
       selectedVermarkterId = (selectedVermarkterId === id) ? null : id;
-    } else if (type === "publisher") {
-      selectedPublisherId = (selectedPublisherId === id) ? null : id;
     }
  
     updateFiltering();
@@ -433,8 +382,6 @@ document.addEventListener("DOMContentLoaded", async () => {
       selectedSspId = null;
     } else if (type === "vermarkter") {
       selectedVermarkterId = null;
-    } else if (type === "publisher") {
-      selectedPublisherId = null;
     }
     updateFiltering();
   }
@@ -445,7 +392,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     selectedDspId = null;
     selectedSspId = null;
     selectedVermarkterId = null;
-    selectedPublisherId = null;
     updateFiltering();
     closeDrawer();
   }
@@ -459,8 +405,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     const dspCards = listDsps.querySelectorAll(".partner-card");
     const sspCards = listSsps.querySelectorAll(".partner-card");
     const vermarkterCards = listVermarkters.querySelectorAll(".partner-card");
-    const publisherCards = listPublishers.querySelectorAll(".partner-card");
-    const publisherGroupHeaders = listPublishers.querySelectorAll(".publisher-group-header");
     const sspGroupHeaders = listSsps.querySelectorAll(".ssp-group-header");
 
     // Conditionally show/hide Stage 1a (Data Partner) depending on Usecase Selection
@@ -472,12 +416,9 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
     // 2. Clear previous classes
-    const allCards = [...usecaseCards, ...datapartnerCards, ...dspCards, ...sspCards, ...vermarkterCards, ...publisherCards];
+    const allCards = [...usecaseCards, ...datapartnerCards, ...dspCards, ...sspCards, ...vermarkterCards];
     allCards.forEach(c => {
       c.className = "partner-card";
-    });
-    publisherGroupHeaders.forEach(h => {
-      h.className = "publisher-group-header";
     });
     sspGroupHeaders.forEach(h => {
       h.className = "ssp-group-header";
@@ -506,7 +447,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       // Fetch node definitions
       const dsp = OVK_LANDSCAPE_CONFIG.dsps.find(item => item.id === path.dsp);
       const ssp = OVK_LANDSCAPE_CONFIG.ssps.find(item => item.id === path.ssp);
-      const pub = OVK_LANDSCAPE_CONFIG.publishers.find(item => item.id === path.publisher);
+      const v = OVK_LANDSCAPE_CONFIG.vermarkter.find(item => item.id === path.vermarkter);
 
       // DSP must support allowed ID if selected as activation route
       if (dspSupported) {
@@ -519,9 +460,9 @@ document.addEventListener("DOMContentLoaded", async () => {
         if (!sspHasId && !dspSupported) return false;
       }
 
-      // Publisher must support allowed ID
-      const pubHasId = pub && (pub.supportedIds || []).some(id => allowedIds.includes(id));
-      if (!pubHasId) return false;
+      // Vermarkter must support allowed ID
+      const vHasId = v && (v.supportedIds || []).some(id => allowedIds.includes(id));
+      if (!vHasId) return false;
 
       return true;
     }
@@ -539,17 +480,11 @@ document.addEventListener("DOMContentLoaded", async () => {
             if (!d.supportedVermarkter.includes(v.id)) return;
             if (!s.supportedVermarkter.includes(v.id)) return;
             
-            OVK_LANDSCAPE_CONFIG.publishers.forEach(p => {
-              // Publisher belongs to Vermarkter
-              if (p.vermarkterId !== v.id) return;
-              
-              allPaths.push({
-                usecase: u.id,
-                dsp: d.id,
-                ssp: s.id,
-                vermarkter: v.id,
-                publisher: p.id
-              });
+            allPaths.push({
+              usecase: u.id,
+              dsp: d.id,
+              ssp: s.id,
+              vermarkter: v.id
             });
           });
         });
@@ -606,7 +541,6 @@ document.addEventListener("DOMContentLoaded", async () => {
       if (selectedDspId && path.dsp !== selectedDspId) return false;
       if (selectedSspId && path.ssp !== selectedSspId) return false;
       if (selectedVermarkterId && path.vermarkter !== selectedVermarkterId) return false;
-      if (selectedPublisherId && path.publisher !== selectedPublisherId) return false;
       return true;
     });
 
@@ -616,7 +550,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     const activeDspIds = new Set();
     const activeSspIds = new Set();
     const activeVermarkterIds = new Set();
-    const activePublisherIds = new Set();
 
     // Determine active Data Partners (only when Usecase Targeting is selected)
     if (selectedUsecaseId === "targeting") {
@@ -630,7 +563,6 @@ document.addEventListener("DOMContentLoaded", async () => {
             if (selectedDspId && path.dsp !== selectedDspId) return false;
             if (selectedSspId && path.ssp !== selectedSspId) return false;
             if (selectedVermarkterId && path.vermarkter !== selectedVermarkterId) return false;
-            if (selectedPublisherId && path.publisher !== selectedPublisherId) return false;
             return isPathDataPartnerCompatible(path, dp.id);
           });
           if (hasCompatiblePath) {
@@ -647,7 +579,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         activeUsecaseIds.add(path.usecase);
       }
       
-      // 2. For the other columns (DSP, SSP, Vermarkter, Publisher):
+      // 2. For the other columns (DSP, SSP, Vermarkter):
       // If a usecase filter is active, we only consider usecase-compatible paths.
       // If no usecase filter is active, any physically connected path is valid!
       if (selectedUsecaseId) {
@@ -655,19 +587,17 @@ document.addEventListener("DOMContentLoaded", async () => {
           activeDspIds.add(path.dsp);
           activeSspIds.add(path.ssp);
           activeVermarkterIds.add(path.vermarkter);
-          activePublisherIds.add(path.publisher);
         }
       } else {
         // No usecase filter active -> all physical connections are active!
         activeDspIds.add(path.dsp);
         activeSspIds.add(path.ssp);
         activeVermarkterIds.add(path.vermarkter);
-        activePublisherIds.add(path.publisher);
       }
     });
 
     const isAnyFilterActive = !!(
-      selectedUsecaseId || selectedDataPartnerId || selectedDspId || selectedSspId || selectedVermarkterId || selectedPublisherId
+      selectedUsecaseId || selectedDataPartnerId || selectedDspId || selectedSspId || selectedVermarkterId
     );
 
     // Helper to assign CSS classes
@@ -692,15 +622,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     applyClasses(dspCards, activeDspIds, selectedDspId);
     applyClasses(sspCards, activeSspIds, selectedSspId);
     applyClasses(vermarkterCards, activeVermarkterIds, selectedVermarkterId);
-    applyClasses(publisherCards, activePublisherIds, selectedPublisherId);
-
-    // Apply class to publisher headers
-    publisherGroupHeaders.forEach(h => {
-      const vId = h.getAttribute("data-group-vermarkter");
-      if (!activeVermarkterIds.has(vId)) {
-        h.classList.add("inactive");
-      }
-    });
 
     // Apply class to SSP headers
     sspGroupHeaders.forEach(h => {
@@ -726,7 +647,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (selectedDspId) activeFilters.push({ type: "dsp", id: selectedDspId, name: "DSP", findFn: id => OVK_LANDSCAPE_CONFIG.dsps.find(d => d.id === id) });
     if (selectedSspId) activeFilters.push({ type: "ssp", id: selectedSspId, name: "SSP", findFn: id => OVK_LANDSCAPE_CONFIG.ssps.find(s => s.id === id) });
     if (selectedVermarkterId) activeFilters.push({ type: "vermarkter", id: selectedVermarkterId, name: "Vermarkter", findFn: id => OVK_LANDSCAPE_CONFIG.vermarkter.find(v => v.id === id) });
-    if (selectedPublisherId) activeFilters.push({ type: "publisher", id: selectedPublisherId, name: "Publisher", findFn: id => OVK_LANDSCAPE_CONFIG.publishers.find(p => p.id === id) });
 
     if (activeFilters.length === 0) {
       activeChipsContainer.innerHTML = `<span class="no-filter-text">Keine Filter aktiv</span>`;
@@ -851,25 +771,12 @@ document.addEventListener("DOMContentLoaded", async () => {
       const item = OVK_LANDSCAPE_CONFIG.vermarkter.find(v => v.id === id);
       title = `Vermarkter: ${item.name}`;
       
-      const vPublishers = OVK_LANDSCAPE_CONFIG.publishers.filter(p => p.vermarkterId === id).map(p => p.name).join(", ");
-      const inheritedIds = getVermarkterInheritedIds(id);
-      const idsHtml = getIdsDetailsHtml(inheritedIds, true);
+      const idsHtml = getIdsDetailsHtml(item.supportedIds);
 
       htmlContent = `
         <p><strong>Beschreibung:</strong> ${item.description}</p>
-        <p><strong>Zugeordnete Publisher:</strong> ${vPublishers}</p>
         ${idsHtml}
         <p style="margin-top: 0.5rem;"><em>Klicken Sie auf den Vermarkter, um die Ansicht auf diesen Filter einzuschränken.</em></p>
-      `;
-    } else if (type === "publisher") {
-      const item = OVK_LANDSCAPE_CONFIG.publishers.find(p => p.id === id);
-      const parentV = OVK_LANDSCAPE_CONFIG.vermarkter.find(v => v.id === item.vermarkterId);
-      title = `Publisher: ${item.name}`;
-      const idsHtml = getIdsDetailsHtml(item.supportedIds);
-      htmlContent = `
-        <p><strong>Vermarkter-Zuordnung:</strong> ${parentV ? parentV.name : item.vermarkterId}</p>
-        ${idsHtml}
-        <p style="margin-top: 0.5rem;"><em>Klicken Sie auf den Publisher, um die Ansicht auf diesen Filter einzuschränken.</em></p>
       `;
     }
 

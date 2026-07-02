@@ -341,10 +341,10 @@ a:hover {
   min-height: 58px;
 }
 
-/* Landscape Grid (4 Columns, Publisher double width) */
+/* Landscape Grid (3 Columns) */
 .landscape-grid {
   display: grid;
-  grid-template-columns: 1fr 1.15fr 1.15fr 2fr;
+  grid-template-columns: 1fr 1fr 1fr;
   gap: 1.25rem;
   width: 100%;
 }
@@ -433,11 +433,7 @@ a:hover {
   min-height: 52px;
 }
 
-/* Compact style for Publishers which have many items */
-#stage-publisher .partner-card {
-  min-height: 40px;
-  padding: 0.4rem 0.6rem;
-}
+
 
 /* Clickable / interactive hover */
 .partner-card:hover {
@@ -503,30 +499,7 @@ a:hover {
   pointer-events: none;
 }
 
-/* Group container for Publisher (nested look) */
-#list-publishers {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 0.5rem;
-}
 
-.publisher-group-header {
-  grid-column: span 2;
-  font-size: 0.72rem;
-  font-weight: 700;
-  color: var(--color-text-light);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  margin-top: 0.4rem;
-  margin-bottom: 0.15rem;
-  border-bottom: 1px solid var(--color-border);
-  padding-bottom: 0.1rem;
-  transition: opacity var(--transition-normal);
-}
-
-.publisher-group-header.inactive {
-  opacity: 0.15;
-}
 
 /* Group container for SSP (nested look) */
 .ssp-group-header {
@@ -676,9 +649,7 @@ a:hover {
   .landscape-grid {
     grid-template-columns: 1fr 1fr;
   }
-  #stage-publisher {
-    grid-column: span 2;
-  }
+
   .usecase-selector-panel {
     flex-direction: column;
     align-items: flex-start;
@@ -693,12 +664,7 @@ a:hover {
   .landscape-grid {
     grid-template-columns: 1fr;
   }
-  #stage-publisher {
-    grid-column: span 1;
-  }
-  #list-publishers {
-    grid-template-columns: 1fr;
-  }
+
   .usecase-panel-cards {
     flex-direction: column;
   }
@@ -783,10 +749,7 @@ a:hover {
   transform: scale(1.03);
 }
 
-/* Ensure publisher cards fit the badges nicely */
-#stage-publisher .partner-card {
-  min-height: 48px;
-}
+
 
 /* Stage 1a: Data Partner specific styling */
 .stage-datapartner-panel {
@@ -805,4 +768,38 @@ a:hover {
 
 .stage-datapartner-panel .partner-card.selected::after {
   background-color: #0056cc !important;
+}
+
+/* Publisher Inventory Type Icons */
+.publisher-inventory-types {
+  display: inline-flex;
+  gap: 4px;
+  align-items: center;
+  margin-left: 6px;
+  vertical-align: middle;
+}
+
+.inventory-icon-wrapper {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 4px;
+  background-color: #f1f5f9;
+  color: #64748b;
+  border: 1px solid #e2e8f0;
+  transition: all var(--transition-fast);
+  cursor: help;
+}
+
+.inventory-icon-wrapper:hover {
+  background-color: #e0f2fe;
+  color: var(--color-ovk-blue);
+  border-color: var(--color-ovk-light-blue);
+  transform: translateY(-1px);
+}
+
+.inventory-icon-wrapper svg {
+  display: block;
 }

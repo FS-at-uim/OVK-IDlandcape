@@ -66,7 +66,7 @@ try {
   const dspIds = new Set();
   const sspIds = new Set();
   const vermarkterIds = new Set();
-  const publisherIds = new Set();
+
   const registeredIds = new Set();
 
   // 2. ID-Register validieren
@@ -171,7 +171,7 @@ try {
     });
   }
 
-  // 6. Vermarkter & nested Publisher validieren
+  // 6. Vermarkter validieren
   if (!Array.isArray(config.vermarkter)) {
     logError('config.vermarkter muss ein Array sein.');
   } else {
@@ -185,31 +185,26 @@ try {
       if (!v.name) logError(`Vermarkter '${v.id || idx}' fehlt 'name'.`);
       if (!v.description) logError(`Vermarkter '${vName}' fehlt 'description'.`);
 
-      if (!Array.isArray(v.publishers)) {
-        logError(`Vermarkter '${vName}' besitzt kein gültiges 'publishers'-Array.`);
+      if (!Array.isArray(v.supportedInventoryTypes)) {
+        logError(`Vermarkter '${vName}': supportedInventoryTypes muss ein Array sein.`);
       } else {
-        v.publishers.forEach((p, pIdx) => {
-          const pName = p.name || `Publisher Index ${pIdx}`;
-          if (!p.id) logError(`Publisher an Index ${pIdx} unter Vermarkter '${vName}' fehlt 'id'.`);
-          else {
-            if (publisherIds.has(p.id)) logError(`Publisher ID-Duplikat: '${p.id}' (muss global eindeutig sein)`);
-            publisherIds.add(p.id);
-          }
-          if (!p.name) logError(`Publisher '${p.id || pIdx}' unter Vermarkter '${vName}' fehlt 'name'.`);
-          if (!Array.isArray(p.supportedInventoryTypes)) {
-            logError(`Publisher '${pName}' unter Vermarkter '${vName}': supportedInventoryTypes muss ein Array sein.`);
-          }
-          
-          if (Array.isArray(p.supportedIds)) {
-            p.supportedIds.forEach(id => {
-              if (!registeredIds.has(id.toLowerCase())) {
-                logError(`Publisher '${pName}' unter Vermarkter '${vName}' verweist auf nicht registriertes ID-System: '${id}'`);
-              }
-            });
-          } else {
-            logError(`Publisher '${pName}' unter Vermarkter '${vName}': supportedIds muss ein Array sein.`);
+        v.supportedInventoryTypes.forEach((inv, iIdx) => {
+          if (typeof inv === 'object' && inv !== null) {
+            if (!inv.type) logError(`Vermarkter '${vName}', supportedInventoryTypes Index ${iIdx}: fehlt 'type'.`);
+            if (inv.coverage !== undefined && typeof inv.coverage !== 'number') {
+              logError(`Vermarkter '${vName}', supportedInventoryTypes Index ${iIdx}: 'coverage' muss eine Zahl sein.`);
+            }
           }
         });
+      }
+      if (Array.isArray(v.supportedIds)) {
+        v.supportedIds.forEach(id => {
+          if (!registeredIds.has(id.toLowerCase())) {
+            logError(`Vermarkter '${vName}' verweist auf nicht registriertes ID-System: '${id}'`);
+          }
+        });
+      } else {
+        logError(`Vermarkter '${vName}': supportedIds muss ein Array sein.`);
       }
     });
   }
