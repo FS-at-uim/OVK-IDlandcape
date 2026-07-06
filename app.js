@@ -465,17 +465,26 @@ document.addEventListener("DOMContentLoaded", async () => {
 
       // DSP must support allowed ID if selected as activation route
       if (dspSupported) {
-        const dspHasId = dsp && (dsp.supportedIds || []).some(id => allowedIds.includes(id));
+        const dspHasId = dsp && (dsp.supportedIds || []).some(idObj => {
+          const idStr = typeof idObj === 'string' ? idObj : idObj.id;
+          return allowedIds.includes(idStr);
+        });
         if (!dspHasId && !sspSupported) return false;
       }
       // SSP must support allowed ID if selected as activation route
       if (sspSupported) {
-        const sspHasId = ssp && (ssp.supportedIds || []).some(id => allowedIds.includes(id));
+        const sspHasId = ssp && (ssp.supportedIds || []).some(idObj => {
+          const idStr = typeof idObj === 'string' ? idObj : idObj.id;
+          return allowedIds.includes(idStr);
+        });
         if (!sspHasId && !dspSupported) return false;
       }
 
       // Vermarkter must support allowed ID
-      const vHasId = v && (v.supportedIds || []).some(id => allowedIds.includes(id));
+      const vHasId = v && (v.supportedIds || []).some(idObj => {
+        const idStr = typeof idObj === 'string' ? idObj : idObj.id;
+        return allowedIds.includes(idStr);
+      });
       if (!vHasId) return false;
 
       return true;
