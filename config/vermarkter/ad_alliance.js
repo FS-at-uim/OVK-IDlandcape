@@ -18,4 +18,4 @@ window.OVK_LANDSCAPE_CONFIG.vermarkter.push({
     { id: "utiq", coverage: 30 },
     { id: "netid_utiq", coverage: 30 }
   ]
-});
+}); 

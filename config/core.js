@@ -69,7 +69,7 @@ window.OVK_LANDSCAPE_CONFIG = {
   ],
 // ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------
   //["ad_alliance", "seven_one_media","bcn", "uim", "media_impact", "stroeer", "visoon", "score"
-  // 3. Stufe: SSP (Supply Side Platforms)
+  // 3. Stufe: SSP (Supply Side Platform)
   ssps: [
     {
       id: "equativ",
