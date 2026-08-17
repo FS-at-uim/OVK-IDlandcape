@@ -4,11 +4,11 @@
 window.OVK_LANDSCAPE_CONFIG = {
   // ID-Definitionen (Erweiterbar)
   ids: [
-    { id: "utiq", name: "Utiq", shortName: "Utiq", color: "#fde8e8", textColor: "#c81e1e", description: "Telekom-basiertes ID-System für sicheres Consent-Targeting." },
+    { id: "utiq", name: "Utiq", shortName: "Utiq", color: "#fde8e8", textColor: "#c81e1e", description: "Telco-basiertes ID-System für sicheres Consent-Targeting." },
     { id: "netid_utiq", name: "netID via Utiq", shortName: "netID / Utiq", color: "#e6f4ea", textColor: "#137333", description: "Targeting über das Utiq-Netzwerk unter Nutzung von netID-Daten." },
     { id: "netid", name: "netID", shortName: "netID", color: "#e6f4ea", textColor: "#137333", description: "Direktes, konsensbasiertes Login- und ID-System der European netID Foundation." }
   ],
-
+// ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------
   // 1. Stufe: Usecases (Vorfilter)
   usecases: [
     {
@@ -24,10 +24,10 @@ window.OVK_LANDSCAPE_CONFIG = {
     {
       id: "targeting_pre",
       name: "Targeting (Pretargeted Pub. Deals)",
-      description: "Pre-Targeting auf Publisher-Seite gesteuert durch die SSP."
+      description: "Pre-Targeting auf Publisher-Seite (und Signalisierung ID der ID-Lösung) gesteuert durch die SSP."
     }
   ],
-
+// ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------
   // 2. Stufe: DSP (Demand Side Platforms)
   dsps: [
     {
@@ -36,7 +36,7 @@ window.OVK_LANDSCAPE_CONFIG = {
       logo: "TTD",
       supportedUsecases: ["fc", "targeting", "targeting_pre"],
       supportedSSPs: ["pubmatic", "index_exchange", "magnite", "xandr", "yieldlab", "smartclip", "equativ"],
-      supportedVermarkter: ["ad_alliance", "seven_one_media", "media_impact", "uim", "iqd"],
+      supportedVermarkter: ["ad_alliance", "seven_one_media","bcn", "media_impact", "uim", "iqd"],
       supportedIds: ["utiq", "netid_utiq", "netid"]
     },
     {
@@ -45,7 +45,7 @@ window.OVK_LANDSCAPE_CONFIG = {
       logo: "AA",
       supportedUsecases: ["targeting", "targeting_pre"],
       supportedSSPs: ["pubmatic", "index_exchange", "magnite", "xandr", "yieldlab", "smartclip", "equativ"],
-      supportedVermarkter: ["ad_alliance", "media_impact", "stroeer", "uim", "iqd"],
+      supportedVermarkter: ["ad_alliance", "media_impact", "bcn","stroeer", "uim", "iqd"],
       supportedIds: ["utiq", "netid_utiq", "netid"]
     },
     {
@@ -54,7 +54,7 @@ window.OVK_LANDSCAPE_CONFIG = {
       logo: "AD",
       supportedUsecases: ["fc", "targeting_pre"],
       supportedSSPs: ["pubmatic", "index_exchange", "magnite", "xandr", "yieldlab", "smartclip"],
-      supportedVermarkter: ["media_impact", "seven_one_media", "uim"],
+      supportedVermarkter: ["media_impact", "bcn","seven_one_media", "uim"],
       supportedIds: ["utiq", "netid_utiq", "netid"]
     },
     {
@@ -63,11 +63,12 @@ window.OVK_LANDSCAPE_CONFIG = {
       logo: "DV360",
       supportedUsecases: ["targeting_pre"],
       supportedSSPs: ["pubmatic", "index_exchange", "magnite", "xandr", "yieldlab", "equativ"],
-      supportedVermarkter: ["media_impact", "seven_one_media", "uim", "iqd", "ad_alliance"],
+      supportedVermarkter: ["media_impact", "seven_one_media","bcn", "uim", "iqd", "ad_alliance"],
       supportedIds: []
     }
   ],
-
+// ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+  //["ad_alliance", "seven_one_media","bcn", "uim", "media_impact", "stroeer", "visoon", "score"
   // 3. Stufe: SSP (Supply Side Platforms)
   ssps: [
     {
@@ -75,23 +76,23 @@ window.OVK_LANDSCAPE_CONFIG = {
       name: "Equativ",
       category: "curation",
       supportedUsecases: ["fc", "targeting", "targeting_pre"],
-      supportedVermarkter: ["ad_alliance", "seven_one_media", "uim"],
+      supportedVermarkter: ["ad_alliance", "seven_one_media","bcn", "uim"],
       supportedIds: ["utiq", "netid_utiq", "netid"]
     },
     {
       id: "pubmatic",
       name: "PubMatic",
       category: "curation",
-      supportedUsecases: ["fc", "targeting", "targeting_pre"],
-      supportedVermarkter: ["ad_alliance", "seven_one_media", "uim"],
+      supportedUsecases: ["targeting_pre"],
+      supportedVermarkter: ["ad_alliance", "seven_one_media","bcn", "uim"],
       supportedIds: ["utiq", "netid_utiq"]
     },
     {
       id: "index_exchange",
       name: "Index Exchange",
       category: "curation",
-      supportedUsecases: ["targeting", "targeting_pre"],
-      supportedVermarkter: ["ad_alliance", "media_impact", "seven_one_media", "uim", "iqd"],
+      supportedUsecases: [],
+      supportedVermarkter: ["ad_alliance", "media_impact","bcn", "seven_one_media", "uim", "iqd"],
       supportedIds: ["utiq", "netid_utiq"]
     },
     {
@@ -99,7 +100,7 @@ window.OVK_LANDSCAPE_CONFIG = {
       name: "Magnite",
       category: "curation",
       supportedUsecases: ["targeting", "targeting_pre"],
-      supportedVermarkter: ["seven_one_media", "stroeer", "uim"],
+      supportedVermarkter: ["seven_one_media", "stroeer", "bcn","uim"],
       supportedIds: ["utiq", "netid_utiq"]
     },
     {
@@ -107,7 +108,7 @@ window.OVK_LANDSCAPE_CONFIG = {
       name: "Xandr",
       category: "curation",
       supportedUsecases: ["targeting", "targeting_pre"],
-      supportedVermarkter: ["media_impact", "stroeer", "uim", "iqd"],
+      supportedVermarkter: ["media_impact", "stroeer", "uim","bcn", "iqd"],
       supportedIds: ["netid"]
     },
     {
@@ -115,7 +116,7 @@ window.OVK_LANDSCAPE_CONFIG = {
       name: "Yieldlab",
       category: "standard",
 supportedUsecases: ["targeting_pre"],
-      supportedVermarkter: ["media_impact", "stroeer", "uim", "iqd"],
+      supportedVermarkter: ["media_impact","bcn", "stroeer", "uim", "iqd"],
       supportedIds: ["netid", "utiq"]
     },
     {
@@ -128,7 +129,7 @@ supportedUsecases: ["targeting_pre"],
   ],
   dataPartners: []
 };
-
+// ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 // Für Node.js CommonJS-Umgebung (Validierung)
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = window.OVK_LANDSCAPE_CONFIG;

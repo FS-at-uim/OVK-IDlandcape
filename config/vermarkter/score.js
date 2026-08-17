@@ -6,16 +6,14 @@ if (!window.OVK_LANDSCAPE_CONFIG.vermarkter) {
 }
 
 window.OVK_LANDSCAPE_CONFIG.vermarkter.push({
-  id: "media_impact",
-  name: "Media Impact",
-  description: " Vermarkter von Axel Springer.",
+  id: "score",
+  name: "Score Media Group",
+  description: "Score Media Group.",
   supportedInventoryTypes: [
-    { type: "desktop", coverage: 0},
-    { type: "mobile", coverage:  0},
-    { type: "app", coverage:  0}
+    { type: "desktop", coverage:  16},
+    { type: "mobile", coverage:  16}
   ],
   supportedIds: [
-    { id: "utiq", coverage:  0},
-    { id: "netid", coverage:  0}
+    { id: "utiq", coverage:  16}
   ]
 });
