@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vermarkter Config Editor</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; margin: 0; padding: 20px; background: #121212; color: #e0e0e0; }
+        .container { max-width: 1200px; margin: 0 auto; display: flex; gap: 20px; }
+        .form-section, .code-section { flex: 1; background: #1e1e1e; padding: 20px; border-radius: 8px; }
+        .code-section { position: sticky; top: 20px; height: calc(100vh - 80px); overflow-y: auto; display: flex; flex-direction: column; }
+        h1, h2, h3 { color: #fff; margin-top: 0; }
+        h3 { margin-top: 20px; border-bottom: 1px solid #333; padding-bottom: 5px; }
+        label { display: block; margin-top: 15px; font-weight: bold; font-size: 0.9em; color: #aaa; }
+        select, input[type="text"], input[type="number"], textarea { width: 100%; padding: 10px; margin-top: 5px; background: #2c2c2c; border: 1px solid #444; color: #fff; border-radius: 4px; box-sizing: border-box; }
+        .checkbox-group { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 10px; }
+        .checkbox-item { display: flex; align-items: center; gap: 8px; background: #2c2c2c; padding: 8px 12px; border-radius: 4px; cursor: pointer; }
+        .checkbox-item input { margin: 0; cursor: pointer; }
+        pre { background: #000; padding: 15px; border-radius: 4px; overflow-x: auto; color: #569cd6; white-space: pre-wrap; font-size: 0.9em; flex: 1; }
+        .row-item { display: flex; gap: 10px; margin-top: 10px; align-items: center; }
+        .row-item input { margin-top: 0; }
+        button { background: #137333; color: white; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer; font-weight: bold; }
+        button:hover { background: #0f5c28; }
+        .remove-btn { background: #c81e1e; padding: 8px 12px; }
+        .remove-btn:hover { background: #a01818; }
+        .copy-btn { margin-top: 10px; background: #333; }
+        .copy-btn:hover { background: #444; }
+    </style>
+</head>
+<body>
+
+<h1>Vermarkter Config Editor</h1>
+<div class="container">
+    <div class="form-section">
+        <label for="vermarkterSelect">Vermarkter auswählen:</label>
+        <select id="vermarkterSelect">
+            <option value="">-- Bitte wählen --</option>
+        </select>
+
+        <div id="editorForm" style="display:none; margin-top: 30px;">
+            <h2>Vermarkter Details</h2>
+            <label>ID (nicht änderbar)</label>
+            <input type="text" id="v_id" disabled>
+            
+            <label>Name</label>
+            <input type="text" id="v_name" oninput="generateCode()">
+            
+            <label>Beschreibung</label>
+            <textarea id="v_description" rows="3" oninput="generateCode()"></textarea>
+
+            <h3>Supported Inventory Types</h3>
+            <div id="v_inventory"></div>
+            <button type="button" id="addInventoryBtn" style="margin-top: 10px;">+ Inventory hinzufügen</button>
+
+            <h3>Supported IDs</h3>
+            <div id="v_ids"></div>
+            <button type="button" id="addIdBtn" style="margin-top: 10px;">+ ID hinzufügen</button>
+
+            <h2>Übergreifende Konfiguration (core.js)</h2>
+            <p style="font-size: 0.85em; color: #aaa;">Wähle, auf welchen Plattformen dieser Vermarkter verfügbar ist.</p>
+            
+            <h3>Zugeordnete DSPs</h3>
+            <div class="checkbox-group" id="c_dsps"></div>
+
+            <h3>Zugeordnete SSPs</h3>
+            <div class="checkbox-group" id="c_ssps"></div>
+        </div>
+    </div>
+    
+    <div class="code-section">
+        <h2>Änderungen (Code Preview)</h2>
+        <p style="font-size: 0.9em; color: #aaa;">Kopiere den generierten Code in die entsprechenden Dateien.</p>
+        
+        <h3>config/vermarkter/<span id="filenamePreview">...</span>.js</h3>
+        <pre id="codeVermarkter">// Bitte Vermarkter auswählen</pre>
+        <button class="copy-btn" onclick="copyToClipboard('codeVermarkter')">Code kopieren</button>
+        
+        <h3>config/core.js (Auszüge)</h3>
+        <pre id="codeCore">// Bitte Vermarkter auswählen</pre>
+        <button class="copy-btn" onclick="copyToClipboard('codeCore')">Code kopieren</button>
+    </div>
+</div>
+
+<!-- Load Configurations -->
+<script src="config/core.js"></script>
+<script src="config/vermarkter/ad_alliance.js"></script>
+<script src="config/vermarkter/bcn.js"></script>
+<script src="config/vermarkter/iqd.js"></script>
+<script src="config/vermarkter/media_impact.js"></script>
+<script src="config/vermarkter/score.js"></script>
+<script src="config/vermarkter/seven_one_media.js"></script>
+<script src="config/vermarkter/stroeer.js"></script>
+<script src="config/vermarkter/uim.js"></script>
+<script src="config/vermarkter/visoon.js"></script>
+
+<script>
+    const CONFIG = window.OVK_LANDSCAPE_CONFIG;
+    let currentVermarkter = null;
+    let initialCoreState = {}; // To track changes in core.js
+
+    // DOM Elements
+    const select = document.getElementById('vermarkterSelect');
+    const editorForm = document.getElementById('editorForm');
+    const filenamePreview = document.getElementById('filenamePreview');
+    
+    // Initialize Editor
+    function init() {
+        if (!CONFIG || !CONFIG.vermarkter) {
+            alert("Konfiguration konnte nicht geladen werden.");
+            return;
+        }
+
+        // Populate Select
+        CONFIG.vermarkter.forEach(v => {
+            const opt = document.createElement('option');
+            opt.value = v.id;
+            opt.textContent = `${v.name} (${v.id})`;
+            select.appendChild(opt);
+        });
+
+        // Event Listeners
+        select.addEventListener('change', (e) => loadVermarkter(e.target.value));
+        document.getElementById('addInventoryBtn').addEventListener('click', () => addRow('v_inventory', '', 0));
+        document.getElementById('addIdBtn').addEventListener('click', () => addRow('v_ids', '', 0));
+    }
+
+    function loadVermarkter(id) {
+        if (!id) {
+            editorForm.style.display = 'none';
+            document.getElementById('codeVermarkter').textContent = '// Bitte Vermarkter auswählen';
+            document.getElementById('codeCore').textContent = '// Bitte Vermarkter auswählen';
+            filenamePreview.textContent = '...';
+            return;
+        }
+
+        // Clone current state to avoid mutating original config immediately if we don't want to
+        currentVermarkter = JSON.parse(JSON.stringify(CONFIG.vermarkter.find(v => v.id === id)));
+        filenamePreview.textContent = id;
+        
+        // Fill basic details
+        document.getElementById('v_id').value = currentVermarkter.id;
+        document.getElementById('v_name').value = currentVermarkter.name || '';
+        document.getElementById('v_description').value = currentVermarkter.description || '';
+
+        // Fill Inventory
+        const invContainer = document.getElementById('v_inventory');
+        invContainer.innerHTML = '';
+        if (currentVermarkter.supportedInventoryTypes) {
+            currentVermarkter.supportedInventoryTypes.forEach(inv => addRow('v_inventory', inv.type, inv.coverage));
+        }
+
+        // Fill IDs
+        const idContainer = document.getElementById('v_ids');
+        idContainer.innerHTML = '';
+        if (currentVermarkter.supportedIds) {
+            currentVermarkter.supportedIds.forEach(idObj => addRow('v_ids', idObj.id, idObj.coverage));
+        }
+
+        // Render Checkboxes for Core
+        renderCoreCheckboxes();
+        editorForm.style.display = 'block';
+        
+        generateCode();
+    }
+
+    function addRow(containerId, keyVal, covVal) {
+        const container = document.getElementById(containerId);
+        const div = document.createElement('div');
+        div.className = 'row-item';
+        
+        const isId = containerId === 'v_ids';
+        
+        // Key input (type or id)
+        let keyInput;
+        if (isId) {
+            keyInput = document.createElement('select');
+            CONFIG.ids.forEach(idDef => {
+                const opt = document.createElement('option');
+                opt.value = idDef.id;
+                opt.textContent = idDef.name;
+                if (idDef.id === keyVal) opt.selected = true;
+                keyInput.appendChild(opt);
+            });
+            if (!keyVal && CONFIG.ids.length > 0) keyVal = CONFIG.ids[0].id; // Default
+        } else {
+            keyInput = document.createElement('input');
+            keyInput.type = 'text';
+            keyInput.placeholder = 'Type (z.B. desktop)';
+            keyInput.value = keyVal;
+        }
+        keyInput.className = 'row-key';
+        keyInput.onchange = generateCode;
+        keyInput.oninput = generateCode;
+
+        // Coverage input
+        const covInput = document.createElement('input');
+        covInput.type = 'number';
+        covInput.placeholder = 'Coverage %';
+        covInput.min = 0;
+        covInput.max = 100;
+        covInput.value = covVal;
+        covInput.className = 'row-cov';
+        covInput.oninput = generateCode;
+
+        // Remove button
+        const removeBtn = document.createElement('button');
+        removeBtn.type = 'button';
+        removeBtn.className = 'remove-btn';
+        removeBtn.textContent = 'X';
+        removeBtn.onclick = () => { div.remove(); generateCode(); };
+
+        div.appendChild(keyInput);
+        div.appendChild(covInput);
+        div.appendChild(removeBtn);
+        container.appendChild(div);
+        
+        if (!keyVal) generateCode(); // If added empty
+    }
+
+    function renderCoreCheckboxes() {
+        const dspContainer = document.getElementById('c_dsps');
+        const sspContainer = document.getElementById('c_ssps');
+        dspContainer.innerHTML = '';
+        sspContainer.innerHTML = '';
+        initialCoreState = { dsps: {}, ssps: {} };
+
+        // DSPs
+        CONFIG.dsps.forEach(dsp => {
+            const hasVermarkter = dsp.supportedVermarkter && dsp.supportedVermarkter.includes(currentVermarkter.id);
+            initialCoreState.dsps[dsp.id] = hasVermarkter;
+            dspContainer.appendChild(createCheckbox('dsp', dsp.id, dsp.name, hasVermarkter));
+        });
+
+        // SSPs
+        CONFIG.ssps.forEach(ssp => {
+            const hasVermarkter = ssp.supportedVermarkter && ssp.supportedVermarkter.includes(currentVermarkter.id);
+            initialCoreState.ssps[ssp.id] = hasVermarkter;
+            sspContainer.appendChild(createCheckbox('ssp', ssp.id, ssp.name, hasVermarkter));
+        });
+    }
+
+    function createCheckbox(type, id, label, isChecked) {
+        const lbl = document.createElement('label');
+        lbl.className = 'checkbox-item';
+        const cb = document.createElement('input');
+        cb.type = 'checkbox';
+        cb.value = id;
+        cb.checked = isChecked;
+        cb.dataset.type = type;
+        cb.onchange = generateCode;
+        
+        lbl.appendChild(cb);
+        lbl.appendChild(document.createTextNode(label));
+        return lbl;
+    }
+
+    function generateCode() {
+        if (!currentVermarkter) return;
+
+        // 1. Build Vermarkter Object
+        const vObj = {
+            id: currentVermarkter.id,
+            name: document.getElementById('v_name').value,
+            description: document.getElementById('v_description').value,
+            supportedInventoryTypes: [],
+            supportedIds: []
+        };
+
+        // Get Inventory
+        document.querySelectorAll('#v_inventory .row-item').forEach(row => {
+            const type = row.querySelector('.row-key').value.trim();
+            const cov = parseInt(row.querySelector('.row-cov').value) || 0;
+            if (type) vObj.supportedInventoryTypes.push({ type, coverage: cov });
+        });
+
+        // Get IDs
+        document.querySelectorAll('#v_ids .row-item').forEach(row => {
+            const id = row.querySelector('.row-key').value;
+            const cov = parseInt(row.querySelector('.row-cov').value) || 0;
+            if (id) vObj.supportedIds.push({ id, coverage: cov });
+        });
+
+        // Format Vermarkter JS
+        let jsCode = `if (!window.OVK_LANDSCAPE_CONFIG) {
+  window.OVK_LANDSCAPE_CONFIG = {};
+}
+if (!window.OVK_LANDSCAPE_CONFIG.vermarkter) {
+  window.OVK_LANDSCAPE_CONFIG.vermarkter = [];
+}
+
+window.OVK_LANDSCAPE_CONFIG.vermarkter.push(${JSON.stringify(vObj, null, 2).replace(/"([^"]+)":/g, '$1:')});`;
+        
+        document.getElementById('codeVermarkter').textContent = jsCode;
+
+        // 2. Build Core changes
+        let coreChanges = [];
+        
+        // Check DSPs
+        document.querySelectorAll('#c_dsps input').forEach(cb => {
+            const dspId = cb.value;
+            const isChecked = cb.checked;
+            const wasChecked = initialCoreState.dsps[dspId];
+            
+            if (isChecked !== wasChecked) {
+                const dsp = CONFIG.dsps.find(d => d.id === dspId);
+                let currentVermarkters = [...(dsp.supportedVermarkter || [])];
+                
+                if (isChecked) {
+                    if (!currentVermarkters.includes(currentVermarkter.id)) currentVermarkters.push(currentVermarkter.id);
+                } else {
+                    currentVermarkters = currentVermarkters.filter(v => v !== currentVermarkter.id);
+                }
+                
+                coreChanges.push(`// In core.js -> dsps -> id: "${dspId}"\nsupportedVermarkter: ${JSON.stringify(currentVermarkters)}`);
+            }
+        });
+
+        // Check SSPs
+        document.querySelectorAll('#c_ssps input').forEach(cb => {
+            const sspId = cb.value;
+            const isChecked = cb.checked;
+            const wasChecked = initialCoreState.ssps[sspId];
+            
+            if (isChecked !== wasChecked) {
+                const ssp = CONFIG.ssps.find(s => s.id === sspId);
+                let currentVermarkters = [...(ssp.supportedVermarkter || [])];
+                
+                if (isChecked) {
+                    if (!currentVermarkters.includes(currentVermarkter.id)) currentVermarkters.push(currentVermarkter.id);
+                } else {
+                    currentVermarkters = currentVermarkters.filter(v => v !== currentVermarkter.id);
+                }
+                
+                coreChanges.push(`// In core.js -> ssps -> id: "${sspId}"\nsupportedVermarkter: ${JSON.stringify(currentVermarkters)}`);
+            }
+        });
+
+        if (coreChanges.length === 0) {
+            document.getElementById('codeCore').textContent = '// Keine Änderungen an der core.js erforderlich.';
+        } else {
+            document.getElementById('codeCore').textContent = coreChanges.join('\n\n');
+        }
+    }
+
+    function copyToClipboard(elementId) {
+        const text = document.getElementById(elementId).textContent;
+        navigator.clipboard.writeText(text).then(() => {
+            alert('Code kopiert!');
+        });
+    }
+
+    // Run on load
+    window.onload = init;
+</script>
+
+</body>
+</html>
