@@ -183,10 +183,21 @@
             });
             if (!keyVal && CONFIG.ids.length > 0) keyVal = CONFIG.ids[0].id; // Default
         } else {
-            keyInput = document.createElement('input');
-            keyInput.type = 'text';
-            keyInput.placeholder = 'Type (z.B. desktop)';
-            keyInput.value = keyVal;
+            keyInput = document.createElement('select');
+            const inventoryTypes = [
+                { id: 'desktop', name: 'Desktop' },
+                { id: 'mobile', name: 'Mobile Web' },
+                { id: 'app', name: 'In-App' },
+                { id: 'ctv', name: 'Connected TV (CTV)' }
+            ];
+            inventoryTypes.forEach(inv => {
+                const opt = document.createElement('option');
+                opt.value = inv.id;
+                opt.textContent = inv.name;
+                if (inv.id === keyVal) opt.selected = true;
+                keyInput.appendChild(opt);
+            });
+            if (!keyVal && inventoryTypes.length > 0) keyVal = inventoryTypes[0].id; // Default
         }
         keyInput.className = 'row-key';
         keyInput.onchange = generateCode;
