@@ -161,6 +161,18 @@
 </head>
 <body>
 
+<div id="loginOverlay" style="position: fixed; top:0; left:0; width:100%; height:100%; background: #121212; z-index: 9999; display: flex; align-items: center; justify-content: center; flex-direction: column;">
+    <div style="background: #1e1e1e; padding: 40px; border-radius: 8px; width: 100%; max-width: 400px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); text-align: center;">
+        <h2 id="loginTitle" style="margin-top:0;">OVK Admin Login</h2>
+        <p style="color:#aaa; font-size:0.9em; margin-bottom: 20px;" id="loginSubtitle">Bitte gib dein Passwort ein.</p>
+        
+        <input type="password" id="loginPassword" placeholder="Passwort" style="width:100%; margin-bottom: 20px; padding: 12px; background: #2c2c2c; border: 1px solid #444; color:#fff; border-radius:4px; font-size:16px;" onkeydown="if(event.key==='Enter') performLogin()">
+        
+        <button onclick="performLogin()" id="loginBtn" style="width:100%; background: #2563eb; color:white; padding:12px; font-size:16px; border:none; border-radius:4px; cursor:pointer;">Anmelden</button>
+        <div id="loginError" style="color:#c81e1e; margin-top:15px; font-weight:bold; display:none;">Falsches Passwort</div>
+    </div>
+</div>
+
 <div class="header">
   <h1>Core Config Editor (`config/core.js`)</h1>
   <div class="nav-links">
@@ -205,6 +217,12 @@
     <h2 id="previewTitle">Vorschau: `config/core.js`</h2>
     <p id="previewSubtitle" style="font-size: 0.85em; color: #aaa;">Generierter Inhalt der vollständigen <code>config/core.js</code>.</p>
     
+    <div style="background: #222; padding: 15px; border-radius: 6px; margin-bottom: 15px; border: 1px solid #444;">
+        <p style="margin-top: 0; margin-bottom: 15px; font-size: 0.9em;">Änderungen live im Repository speichern.</p>
+        <button id="publishBtn" onclick="publishConfig()" style="width: 100%; background: #2563eb; padding: 12px; font-size: 1em;">Änderungen speichern & veröffentlichen</button>
+        <div id="publishStatus" style="margin-top: 10px; font-size: 0.9em; font-weight: bold; display: none;"></div>
+    </div>
+
     <pre id="codePreview">// Wähle einen Eintrag aus oder ändere Daten</pre>
     <div style="display: flex; gap: 10px;">
       <button class="copy-btn" onclick="copyCode()">Code kopieren</button>
@@ -266,6 +284,70 @@
   let coreConfig = null;
   let availableVermarkter = [];
   let currentItemId = null;
+  
+  // Auth State
+  let sessionPassword = "";
+  let isAdmin = false;
+  let urlId = new URLSearchParams(window.location.search).get('id');
+  const WORKER_URL = "https://ovk-ladscape.friedrich-schenk.workers.dev";
+
+  async function performLogin() {
+      const pwd = document.getElementById('loginPassword').value;
+      const btn = document.getElementById('loginBtn');
+      const err = document.getElementById('loginError');
+      
+      if(!pwd) return;
+      
+      btn.disabled = true;
+      btn.textContent = "Prüfe...";
+      err.style.display = 'none';
+
+      try {
+          const res = await fetch(WORKER_URL + "/login", {
+              method: 'POST',
+              headers: {'Content-Type': 'application/json'},
+              body: JSON.stringify({ vermarkterId: urlId || 'admin', password: pwd })
+          });
+
+          if (res.ok) {
+              const data = await res.json();
+              sessionPassword = pwd;
+              isAdmin = data.isAdmin;
+              
+              document.getElementById('loginOverlay').style.display = 'none';
+              
+              if (!isAdmin && urlId) {
+                  // Data Partner Login
+                  switchTab('dataPartners');
+                  document.querySelector('.tabs').style.display = 'none';
+                  document.querySelector('.add-btn').style.display = 'none';
+                  
+                  const itemSel = document.getElementById('itemSelect');
+                  itemSel.value = urlId;
+                  itemSel.disabled = true;
+                  loadSelectedItem();
+              } else if (isAdmin && urlId) {
+                  switchTab('dataPartners');
+                  document.getElementById('itemSelect').value = urlId;
+                  loadSelectedItem();
+              }
+          } else {
+              const errorText = await res.text();
+              err.style.display = 'block';
+              if (res.status === 401) {
+                  err.textContent = "Falsches Passwort";
+              } else {
+                  err.textContent = "Fehler (" + res.status + "): " + errorText;
+              }
+          }
+      } catch(e) {
+          err.style.display = 'block';
+          err.textContent = "Netzwerkfehler: " + e.message;
+      }
+      
+      btn.disabled = false;
+      btn.textContent = "Anmelden";
+  }
 
   function init() {
     CONFIG = window.OVK_LANDSCAPE_CONFIG;
@@ -294,6 +376,13 @@
         id: v.id,
         name: v.name || v.id
       }));
+    }
+
+    if (urlId) {
+        const dp = coreConfig.dataPartners.find(d => d.id === urlId);
+        document.getElementById('loginTitle').textContent = dp ? dp.name : 'Data Partner Login';
+    } else {
+        document.getElementById('loginTitle').textContent = 'OVK Admin Login';
     }
 
     switchTab('dsps');
@@ -339,6 +428,12 @@
     if (!currentItemId) {
       document.getElementById('editorForm').style.display = 'none';
       return;
+    }
+
+    // Verstecke Löschen-Button für Data Partners ohne Admin
+    if (!isAdmin && urlId && activeTab === 'dataPartners') {
+        const removeBtn = document.querySelector('.remove-btn');
+        if (removeBtn) removeBtn.style.display = 'none';
     }
 
     const item = (coreConfig[activeTab] || []).find(i => i.id === currentItemId);
@@ -636,6 +731,52 @@
     navigator.clipboard.writeText(text).then(() => {
       alert(`${filename} Code in die Zwischenablage kopiert!`);
     });
+  }
+
+  async function publishConfig() {
+      const code = document.getElementById('codePreview').textContent;
+      const statusEl = document.getElementById('publishStatus');
+      const target = activeTab === 'dataPartners' ? 'data_partners' : 'core';
+      
+      if (!sessionPassword) {
+          alert("Nicht angemeldet!");
+          return;
+      }
+
+      const btn = document.getElementById('publishBtn');
+      btn.disabled = true;
+      btn.textContent = "Speichert...";
+      statusEl.style.display = 'block';
+      statusEl.textContent = 'Verbindung wird hergestellt...';
+      statusEl.style.color = '#aaa';
+
+      try {
+          const res = await fetch(WORKER_URL, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                  vermarkterId: urlId || 'admin',
+                  password: sessionPassword,
+                  code: code,
+                  target: target
+              })
+          });
+
+          if (res.ok) {
+              statusEl.textContent = "Erfolgreich gespeichert! Die Map wird beim nächsten Neuladen aktualisiert.";
+              statusEl.style.color = "#137333";
+          } else {
+              const errText = await res.text();
+              statusEl.textContent = "Fehler: " + errText;
+              statusEl.style.color = "#c81e1e";
+          }
+      } catch(e) {
+          statusEl.textContent = "Netzwerkfehler: " + e.message;
+          statusEl.style.color = "#c81e1e";
+      }
+      
+      btn.disabled = false;
+      btn.textContent = "Änderungen speichern & veröffentlichen";
   }
 
   function downloadCode() {

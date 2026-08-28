@@ -16,19 +16,19 @@ export default {
 
     try {
       const body = await request.json();
-      const { vermarkterId, password, code } = body;
+      const { vermarkterId, password, code, target = 'vermarkter' } = body;
       const url = new URL(request.url);
 
       if (!password) {
         return new Response('Fehlendes Passwort', { status: 400, headers: corsHeaders });
       }
 
-      // Passwort Validierung (Admin oder spezifischer Vermarkter)
+      // Passwort Validierung
       const passwords = JSON.parse(env.VERMARKTER_PASSWORDS || '{}');
       const isAdmin = (env.ADMIN_PASSWORD && password === env.ADMIN_PASSWORD);
-      const isVermarkter = (vermarkterId && passwords[vermarkterId] === password);
+      const isUser = (vermarkterId && passwords[vermarkterId] === password);
 
-      if (!isAdmin && !isVermarkter) {
+      if (!isAdmin && !isUser) {
         return new Response('Falsches Passwort', { status: 401, headers: corsHeaders });
       }
 
@@ -39,15 +39,28 @@ export default {
         });
       }
 
-      // Wenn kein Code mitgeliefert wurde (und es kein /login war)
-      if (!code || !vermarkterId) {
-        return new Response('Fehlende Parameter für Speicherung', { status: 400, headers: corsHeaders });
+      if (!code) {
+        return new Response('Fehlender Code', { status: 400, headers: corsHeaders });
+      }
+
+      // Zielpfad bestimmen und Rechte prüfen
+      let path = '';
+      if (target === 'core') {
+          if (!isAdmin) return new Response('Nur Admins können core.js bearbeiten', { status: 403, headers: corsHeaders });
+          path = 'config/core.js';
+      } else if (target === 'data_partners') {
+          // Data Partners können die Datei aktualisieren, sofern sie ein gültiges PW haben (isUser oder isAdmin)
+          path = 'config/data_partners.js';
+      } else if (target === 'vermarkter') {
+          if (!vermarkterId) return new Response('Fehlende Vermarkter ID', { status: 400, headers: corsHeaders });
+          path = `config/vermarkter/${vermarkterId}.js`;
+      } else {
+          return new Response('Ungültiges Target', { status: 400, headers: corsHeaders });
       }
 
       // GitHub API Setup für Speicherung
       const owner = env.GITHUB_OWNER;
       const repo = env.GITHUB_REPO;
-      const path = `config/vermarkter/${vermarkterId}.js`;
       const token = env.GITHUB_TOKEN;
 
       const githubApiUrl = `https://api.github.com/repos/${owner}/${repo}/contents/${path}`;
