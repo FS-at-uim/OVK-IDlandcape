@@ -25,8 +25,11 @@ export default {
 
       // Passwort Validierung
       const passwords = JSON.parse(env.VERMARKTER_PASSWORDS || '{}');
+      // Erlaubt sowohl das alte JSON-Format als auch individuelle Variablen (z.B. env.PWD_funke)
+      const expectedPassword = env[`PWD_${vermarkterId}`] || passwords[vermarkterId];
+      
       const isAdmin = (env.ADMIN_PASSWORD && password === env.ADMIN_PASSWORD);
-      const isUser = (vermarkterId && passwords[vermarkterId] === password);
+      const isUser = (vermarkterId && expectedPassword && expectedPassword === password);
 
       if (!isAdmin && !isUser) {
         return new Response('Falsches Passwort', { status: 401, headers: corsHeaders });

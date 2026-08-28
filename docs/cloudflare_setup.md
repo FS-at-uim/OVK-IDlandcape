@@ -48,11 +48,16 @@ Füge nun folgende Variablen hinzu (Wähle immer den Button `Encrypt` aus, damit
 *   **Variable 3:**
     *   **Name:** `GITHUB_REPO`
     *   **Value:** Der Name deines Repositories (z.B. `Identifier` oder `OVK-IDlandscape`).
-*   **Variable 4:**
+*   **Variable 4: (Option A) JSON Passwörter (Alte Variante)**
     *   **Name:** `VERMARKTER_PASSWORDS`
-    *   **Value:** Ein striktes JSON-Objekt mit den Vermarkter-IDs als Key und dem Passwort als Value.
-    *   *Beispiel:* `{"ad_alliance":"geheim1", "funke":"geheim2", "visoon":"geheim3"}`
-    *   *Klicke auf `Encrypt`!*
+    *   **Value:** Ein JSON-Objekt. (z.B. `{"funke":"geheim2"}`)
+*   **Variable 4: (Option B) Einzelne Passwörter (Bessere Variante!)**
+    *   Du kannst jedes Passwort einzeln anlegen. Der Name muss immer `PWD_` + `ID` sein.
+    *   **Name:** `PWD_ad_alliance` (für Ad Alliance)
+    *   **Value:** `geheim1`
+    *   **Name:** `PWD_uim_data` (für UIM Data Partner)
+    *   **Value:** `passwort123`
+    *   *Klicke auf `Encrypt` für jedes Passwort!*
 *   **Variable 5:**
     *   **Name:** `ADMIN_PASSWORD`
     *   **Value:** Das Master-Passwort für dich als Admin (damit du alle Vermarkter bearbeiten kannst).
