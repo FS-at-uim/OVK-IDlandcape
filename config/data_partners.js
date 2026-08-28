@@ -45,7 +45,8 @@ window.OVK_LANDSCAPE_CONFIG.dataPartners = [
     supportedDSPs: [
       "ttd",
       "active_agent",
-      "adform"
+      "adform",
+      "dv360"
     ],
     supportedSSPs: [
       "equativ",
