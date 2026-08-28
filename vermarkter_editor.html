@@ -65,8 +65,11 @@
             <label>Name</label>
             <input type="text" id="v_name" oninput="generateCode()">
             
-            <label>Beschreibung</label>
-            <textarea id="v_description" rows="3" oninput="generateCode()"></textarea>
+            <label style="display: flex; justify-content: space-between;">
+                <span>Beschreibung</span>
+                <span id="v_desc_counter" style="font-weight: normal; color: #888;">0/65</span>
+            </label>
+            <textarea id="v_description" rows="2" maxlength="65" oninput="updateDescCounter(); generateCode()"></textarea>
 
             <h3>Supported Inventory Types</h3>
             <div id="v_inventory"></div>
@@ -258,6 +261,7 @@
         document.getElementById('v_id').value = currentVermarkter.id;
         document.getElementById('v_name').value = currentVermarkter.name || '';
         document.getElementById('v_description').value = currentVermarkter.description || '';
+        updateDescCounter();
 
         const invContainer = document.getElementById('v_inventory');
         invContainer.innerHTML = '';
@@ -570,6 +574,11 @@ window.OVK_LANDSCAPE_CONFIG.vermarkter.push(${JSON.stringify(vObj, null, 2).repl
         navigator.clipboard.writeText(text).then(() => {
             alert('Code kopiert!');
         });
+    }
+
+    function updateDescCounter() {
+        const val = document.getElementById('v_description').value || '';
+        document.getElementById('v_desc_counter').textContent = `${val.length}/65`;
     }
 
     async function publishConfig() {
