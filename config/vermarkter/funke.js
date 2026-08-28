@@ -8,7 +8,7 @@ if (!window.OVK_LANDSCAPE_CONFIG.vermarkter) {
 window.OVK_LANDSCAPE_CONFIG.vermarkter.push({
   id: "funke",
   name: "FUNKE Digital GmbH",
-  description: "Vermarkter der Portale der FUNKE Mediengruppe",
+  description: "Vermarkter der Portale der FUNKE Mediengruppennnn",
   supportedInventoryTypes: [
     {
       type: "desktop",
