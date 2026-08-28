@@ -62,6 +62,10 @@ Füge nun folgende Variablen hinzu (Wähle immer den Button `Encrypt` aus, damit
     *   **Name:** `ADMIN_PASSWORD`
     *   **Value:** Das Master-Passwort für dich als Admin (damit du alle Vermarkter bearbeiten kannst).
     *   *Klicke auf `Encrypt`!*
+*   **Variable 6: (Optional - Für sicheres Testen)**
+    *   **Name:** `GITHUB_BRANCH`
+    *   **Value:** `v2-testing` (Oder der Name deines Test-Branches im originalen Repo)
+    *   *Lässt du diese Variable weg, speichert der Worker standardmäßig in den `main` Branch.*
 
 4. Klicke unten auf **Save and deploy**.
 

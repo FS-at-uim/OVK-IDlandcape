@@ -83,10 +83,13 @@ export default {
       const uint8array = new TextEncoder().encode(code);
       const base64Content = btoa(String.fromCharCode(...uint8array));
 
+      // Erlaubt das Testen auf einem separaten Branch (Fallback auf 'main')
+      const targetBranch = env.GITHUB_BRANCH || 'main';
+
       const putBody = {
-        message: `Update Konfiguration für ${vermarkterId} (via Editor)`,
+        message: `Update Konfiguration für ${target} (via Editor)`,
         content: base64Content,
-        branch: 'main'
+        branch: targetBranch
       };
 
       if (sha) {
