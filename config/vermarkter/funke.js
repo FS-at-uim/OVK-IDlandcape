@@ -6,16 +6,15 @@ if (!window.OVK_LANDSCAPE_CONFIG.vermarkter) {
 }
 
 window.OVK_LANDSCAPE_CONFIG.vermarkter.push({
-  id: "bcn",
-  name: "BCN Brand Community Network",
-  description: "Mediavermarkter für Burda, Funke, Klambt, DeliusKlasing, Kouneli",
+  id: "funke",
+  name: "FUNKE Digital GmbH",
+  description: "Vermarkter der Portale der FUNKE Mediengruppe",
   supportedInventoryTypes: [
     {
       type: "desktop",
       supportedIds: [
         {
           id: "utiq",
-          coverage: 55,
           excludedDSPs: []
         }
       ]
@@ -25,7 +24,6 @@ window.OVK_LANDSCAPE_CONFIG.vermarkter.push({
       supportedIds: [
         {
           id: "utiq",
-          coverage: 55,
           excludedDSPs: []
         }
       ]

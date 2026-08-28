@@ -117,10 +117,15 @@
       </div>
     </div>
 
+    <div style="font-size: 0.8rem; color: var(--color-text-light); text-align: center; margin-top: 1rem; margin-bottom: 0.5rem;" id="disclaimer-text">
+      Alle Angaben basieren auf Auskünften der Vermarkter, ID Solutions und Technologien. Stand: <span id="config-stand-date">--.--.----</span>
+    </div>
   </main>
 
 
-  <script src="config/core.js?v=1.0.6"></script>
-  <script src="app.js?v=1.0.6"></script>
+  <script>
+    document.write('<script src="config/core.js?t=' + Date.now() + '"><\/script>');
+    document.write('<script src="app.js?t=' + Date.now() + '"><\/script>');
+  </script>
 </body>
 </html>

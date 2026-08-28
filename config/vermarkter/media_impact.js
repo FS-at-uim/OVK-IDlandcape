@@ -10,13 +10,63 @@ window.OVK_LANDSCAPE_CONFIG.vermarkter.push({
   name: "Media Impact",
   description: " Vermarkter von Axel Springer.",
   supportedInventoryTypes: [
-    { type: "desktop", coverage: 0},
-    { type: "mobile", coverage:  0},
-    { type: "app", coverage:  0}
+    {
+      type: "desktop",
+      supportedIds: [
+        {
+          id: "utiq",
+          excludedDSPs: []
+        },
+        {
+          id: "netid",
+          excludedDSPs: []
+        },
+        {
+          id: "netid_utiq",
+          excludedDSPs: []
+        }
+      ]
+    },
+    {
+      type: "mobile",
+      supportedIds: [
+        {
+          id: "utiq",
+          excludedDSPs: []
+        },
+        {
+          id: "netid",
+          excludedDSPs: []
+        },
+        {
+          id: "netid_utiq",
+          excludedDSPs: []
+        }
+      ]
+    },
+    {
+      type: "app",
+      supportedIds: [
+        {
+          id: "utiq",
+          excludedDSPs: []
+        },
+        {
+          id: "netid",
+          excludedDSPs: []
+        },
+        {
+          id: "netid_utiq",
+          excludedDSPs: []
+        }
+      ]
+    }
   ],
-  supportedIds: [
-    { id: "utiq", coverage:  0},
-    { id: "netid", coverage:  0}
+  supportedSSPs: [
+    "equativ",
+    "pubmatic",
+    "xandr",
+    "yieldlab",
+    "adform"
   ]
 });
-// neu

@@ -7,13 +7,35 @@ if (!window.OVK_LANDSCAPE_CONFIG.vermarkter) {
 
 window.OVK_LANDSCAPE_CONFIG.vermarkter.push({
   id: "iqd",
-  name: "IQ Digital Media",
-  description: "Vermarkter für IQ Digital Media.",
+  name: "iq digital media marketing GmbH",
+  description: " ",
   supportedInventoryTypes: [
-    { type: "desktop", coverage: 20},
-    { type: "mobile", coverage:  20}
+    {
+      type: "desktop",
+      supportedIds: [
+        {
+          id: "utiq",
+          excludedDSPs: []
+        }
+      ]
+    },
+    {
+      type: "mobile",
+      supportedIds: [
+        {
+          id: "utiq",
+          excludedDSPs: []
+        }
+      ]
+    }
   ],
-  supportedIds: [
-    { id: "utiq", coverage: 20 }
+  supportedSSPs: [
+    "equativ",
+    "pubmatic",
+    "index_exchange",
+    "magnite",
+    "xandr",
+    "yieldlab",
+    "adform"
   ]
-}); 
+});

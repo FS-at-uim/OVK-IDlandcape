@@ -31,18 +31,6 @@
 </head>
 <body>
 
-<div id="loginOverlay" style="position: fixed; top:0; left:0; width:100%; height:100%; background: #121212; z-index: 9999; display: flex; align-items: center; justify-content: center; flex-direction: column;">
-    <div style="background: #1e1e1e; padding: 40px; border-radius: 8px; width: 100%; max-width: 400px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); text-align: center;">
-        <h2 id="loginTitle" style="margin-top:0;">OVK Editor Login</h2>
-        <p style="color:#aaa; font-size:0.9em; margin-bottom: 20px;" id="loginSubtitle">Bitte gib dein Passwort ein.</p>
-        
-        <input type="password" id="loginPassword" placeholder="Passwort" style="width:100%; margin-bottom: 20px; padding: 12px; background: #2c2c2c; border: 1px solid #444; color:#fff; border-radius:4px; font-size:16px;" onkeydown="if(event.key==='Enter') performLogin()">
-        
-        <button onclick="performLogin()" id="loginBtn" style="width:100%; background: #2563eb; color:white; padding:12px; font-size:16px; border:none; border-radius:4px; cursor:pointer;">Anmelden</button>
-        <div id="loginError" style="color:#c81e1e; margin-top:15px; font-weight:bold; display:none;">Falsches Passwort</div>
-    </div>
-</div>
-
 <div class="header">
     <h1>Vermarkter Config Editor</h1>
     <div class="nav-links">
@@ -72,25 +60,28 @@
             <div id="v_inventory"></div>
             <button type="button" id="addInventoryBtn" style="margin-top: 10px;">+ Inventory hinzufügen</button>
 
-            <h2>SSP Opt-In</h2>
-            <p style="font-size: 0.85em; color: #aaa;">Wähle, welche SSPs für diesen Vermarkter aktiv sein sollen.</p>
-            <div class="checkbox-group" id="ssp_opt_in"></div>
+            <h2>Übergreifende Konfiguration (core.js)</h2>
+            <p style="font-size: 0.85em; color: #aaa;">Wähle, auf welchen Plattformen dieser Vermarkter verfügbar ist.</p>
+            
+            <h3>Zugeordnete DSPs</h3>
+            <div class="checkbox-group" id="c_dsps"></div>
+
+            <h3>Zugeordnete SSPs</h3>
+            <div class="checkbox-group" id="c_ssps"></div>
         </div>
     </div>
     
     <div class="code-section">
-        <h2>Veröffentlichen</h2>
-        <p style="font-size: 0.9em; color: #aaa;">Speichere die Änderungen direkt im OVK ID Landscape (Live-Update).</p>
+        <h2>Änderungen (Code Preview)</h2>
+        <p style="font-size: 0.9em; color: #aaa;">Kopiere den generierten Code in die entsprechenden Dateien.</p>
         
-        <div style="background: #222; padding: 15px; border-radius: 6px; margin-bottom: 15px; border: 1px solid #444;">
-            <p style="margin-top: 0; margin-bottom: 15px; font-size: 0.9em;">Änderungen für <strong><span id="pwdVermarkterName">...</span></strong> speichern.</p>
-            <button id="publishBtn" onclick="publishConfig()" style="width: 100%; background: #2563eb; padding: 12px; font-size: 1em;">Änderungen speichern & veröffentlichen</button>
-            <div id="publishStatus" style="margin-top: 10px; font-size: 0.9em; font-weight: bold; display: none;"></div>
-        </div>
-
-        <h3>Code Preview (config/vermarkter/<span id="filenamePreview">...</span>.js)</h3>
+        <h3>config/vermarkter/<span id="filenamePreview">...</span>.js</h3>
         <pre id="codeVermarkter">// Bitte Vermarkter auswählen</pre>
-        <button class="copy-btn" onclick="copyToClipboard('codeVermarkter')">Code manuell kopieren</button>
+        <button class="copy-btn" onclick="copyToClipboard('codeVermarkter')">Code kopieren</button>
+        
+        <h3>config/core.js (Auszüge)</h3>
+        <pre id="codeCore">// Bitte Vermarkter auswählen</pre>
+        <button class="copy-btn" onclick="copyToClipboard('codeCore')">Code kopieren</button>
     </div>
 </div>
 
@@ -146,72 +137,11 @@
     let CONFIG;
     let currentVermarkter = null;
     let initialCoreState = {}; // To track changes in core.js
-    
-    // Auth State
-    let sessionPassword = "";
-    let isAdmin = false;
-    let urlId = new URLSearchParams(window.location.search).get('id');
 
     // DOM Elements
     const select = document.getElementById('vermarkterSelect');
     const editorForm = document.getElementById('editorForm');
     const filenamePreview = document.getElementById('filenamePreview');
-
-    // Cloudflare URL
-    const WORKER_URL = "https://ovk-ladscape.friedrich-schenk.workers.dev";
-    
-    async function performLogin() {
-        const pwd = document.getElementById('loginPassword').value;
-        const btn = document.getElementById('loginBtn');
-        const err = document.getElementById('loginError');
-        
-        if(!pwd) return;
-        
-        btn.disabled = true;
-        btn.textContent = "Prüfe...";
-        err.style.display = 'none';
-
-        try {
-            const res = await fetch(WORKER_URL + "/login", {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ vermarkterId: urlId || 'admin', password: pwd })
-            });
-
-            if (res.ok) {
-                const data = await res.json();
-                sessionPassword = pwd;
-                isAdmin = data.isAdmin;
-                
-                document.getElementById('loginOverlay').style.display = 'none';
-                
-                // Wenn es ein regulärer Vermarkter ist
-                if (!isAdmin && urlId) {
-                    select.disabled = true;
-                    select.value = urlId;
-                    loadVermarkter(urlId);
-                } else if (isAdmin && urlId) {
-                    // Admin besucht spezifischen Link
-                    select.value = urlId;
-                    loadVermarkter(urlId);
-                }
-            } else {
-                const errorText = await res.text();
-                err.style.display = 'block';
-                if (res.status === 401) {
-                    err.textContent = "Falsches Passwort";
-                } else {
-                    err.textContent = "Fehler (" + res.status + "): " + errorText;
-                }
-            }
-        } catch(e) {
-            err.style.display = 'block';
-            err.textContent = "Netzwerkfehler: " + e.message;
-        }
-        
-        btn.disabled = false;
-        btn.textContent = "Anmelden";
-    }
     
     function init() {
         CONFIG = window.OVK_LANDSCAPE_CONFIG;
@@ -230,30 +160,21 @@
 
         // Event Listeners
         select.addEventListener('change', (e) => loadVermarkter(e.target.value));
-        
-        // URL Handling for Login Form
-        if (urlId) {
-            const vMatch = CONFIG.vermarkter.find(v => v.id === urlId);
-            document.getElementById('loginTitle').textContent = vMatch ? vMatch.name : 'OVK Editor';
-        } else {
-            document.getElementById('loginTitle').textContent = 'OVK Admin Login';
-        }
+        document.getElementById('addInventoryBtn').addEventListener('click', () => addRow('v_inventory', '', 0));
+        document.getElementById('addIdBtn').addEventListener('click', () => addRow('v_ids', '', 0));
     }
 
     function loadVermarkter(id) {
         if (!id) {
             editorForm.style.display = 'none';
             document.getElementById('codeVermarkter').textContent = '// Bitte Vermarkter auswählen';
+            document.getElementById('codeCore').textContent = '// Bitte Vermarkter auswählen';
             filenamePreview.textContent = '...';
-            document.getElementById('pwdVermarkterName').textContent = '...';
-            document.getElementById('publishStatus').style.display = 'none';
             return;
         }
 
         currentVermarkter = JSON.parse(JSON.stringify(CONFIG.vermarkter.find(v => v.id === id)));
         filenamePreview.textContent = id;
-        document.getElementById('pwdVermarkterName').textContent = currentVermarkter.name;
-        document.getElementById('publishStatus').style.display = 'none';
         
         document.getElementById('v_id').value = currentVermarkter.id;
         document.getElementById('v_name').value = currentVermarkter.name || '';
@@ -270,7 +191,7 @@
             });
         }
 
-        renderSSPOptIn();
+        renderCoreCheckboxes();
         editorForm.style.display = 'block';
         
         generateCode();
@@ -335,8 +256,7 @@
             supportedIds.forEach(idObj => {
                 const idStr = typeof idObj === 'string' ? idObj : idObj.id;
                 const idCov = typeof idObj === 'string' ? '' : (idObj.coverage || '');
-                const excludedDSPs = typeof idObj === 'string' ? [] : (idObj.excludedDSPs || []);
-                addNestedIdRow(idsContainer, idStr, idCov, excludedDSPs);
+                addNestedIdRow(idsContainer, idStr, idCov);
             });
         }
         
@@ -347,15 +267,13 @@
         generateCode();
     }
 
-    function addNestedIdRow(container, keyVal, covVal, excludedDSPs = []) {
+    function addNestedIdRow(container, keyVal, covVal) {
         const div = document.createElement('div');
         div.className = 'nested-id-item';
+        div.style.display = 'flex';
+        div.style.gap = '10px';
         div.style.marginTop = '5px';
-        
-        const topRow = document.createElement('div');
-        topRow.style.display = 'flex';
-        topRow.style.gap = '10px';
-        topRow.style.alignItems = 'center';
+        div.style.alignItems = 'center';
         
         const keyInput = document.createElement('select');
         CONFIG.ids.forEach(idDef => {
@@ -371,94 +289,12 @@
 
         const covInput = document.createElement('input');
         covInput.type = 'number';
-        covInput.placeholder = 'Coverage %';
+        covInput.placeholder = 'Coverage % (optional)';
         covInput.min = 0;
         covInput.max = 100;
         covInput.value = covVal;
         covInput.className = 'nested-id-cov';
         covInput.oninput = generateCode;
-
-        const excludeBtn = document.createElement('button');
-        excludeBtn.type = 'button';
-        excludeBtn.textContent = 'DSPs ausschließen (' + excludedDSPs.length + ')';
-        excludeBtn.style.padding = '5px 8px';
-        excludeBtn.style.fontSize = '0.8em';
-        excludeBtn.style.background = excludedDSPs.length > 0 ? '#c81e1e' : '#333';
-        
-        const dspListDiv = document.createElement('div');
-        dspListDiv.className = 'dsp-exclusion-list';
-        dspListDiv.style.display = 'none';
-        dspListDiv.style.flexWrap = 'wrap';
-        dspListDiv.style.gap = '8px';
-        dspListDiv.style.marginTop = '10px';
-        dspListDiv.style.width = '100%';
-        dspListDiv.style.padding = '10px';
-        dspListDiv.style.background = '#222';
-        
-        let currentExcluded = [...excludedDSPs];
-
-        function renderDSPs() {
-            dspListDiv.innerHTML = '';
-            const currentId = keyInput.value;
-            let availableCount = 0;
-
-            CONFIG.dsps.forEach(dsp => {
-                const dspSupportsId = dsp.supportedIds && dsp.supportedIds.some(i => (typeof i === 'string' ? i : i.id) === currentId);
-                if (!dspSupportsId) return;
-                
-                availableCount++;
-                const isExcluded = currentExcluded.includes(dsp.id);
-                
-                const lbl = document.createElement('label');
-                lbl.style.display = 'flex';
-                lbl.style.alignItems = 'center';
-                lbl.style.gap = '5px';
-                lbl.style.fontSize = '0.8em';
-                lbl.style.marginTop = '0';
-                
-                const cb = document.createElement('input');
-                cb.type = 'checkbox';
-                cb.value = dsp.id;
-                cb.checked = isExcluded;
-                cb.className = 'dsp-exclude-cb';
-                cb.style.marginTop = '0';
-                cb.onchange = () => {
-                    if (cb.checked) {
-                        if (!currentExcluded.includes(dsp.id)) currentExcluded.push(dsp.id);
-                    } else {
-                        currentExcluded = currentExcluded.filter(e => e !== dsp.id);
-                    }
-                    const checkedCount = currentExcluded.length;
-                    excludeBtn.textContent = 'DSPs ausschließen (' + checkedCount + ')';
-                    excludeBtn.style.background = checkedCount > 0 ? '#c81e1e' : '#333';
-                    generateCode();
-                };
-                
-                lbl.appendChild(cb);
-                lbl.appendChild(document.createTextNode(dsp.name));
-                dspListDiv.appendChild(lbl);
-            });
-            
-            if (availableCount === 0) {
-                dspListDiv.innerHTML = '<div style="color:#aaa; font-size:0.8em; width:100%;">Keine DSP unterstützt diese ID.</div>';
-            }
-            
-            const checkedCount = dspListDiv.querySelectorAll('.dsp-exclude-cb:checked').length;
-            excludeBtn.textContent = 'DSPs ausschließen (' + checkedCount + ')';
-            excludeBtn.style.background = checkedCount > 0 ? '#c81e1e' : '#333';
-        }
-        
-        renderDSPs();
-        
-        keyInput.onchange = () => {
-            currentExcluded = [];
-            renderDSPs();
-            generateCode();
-        };
-        
-        excludeBtn.onclick = () => {
-            dspListDiv.style.display = dspListDiv.style.display === 'none' ? 'flex' : 'none';
-        };
 
         const removeBtn = document.createElement('button');
         removeBtn.type = 'button';
@@ -467,25 +303,33 @@
         removeBtn.style.padding = '5px 8px';
         removeBtn.onclick = () => { div.remove(); generateCode(); };
 
-        topRow.appendChild(keyInput);
-        topRow.appendChild(covInput);
-        topRow.appendChild(excludeBtn);
-        topRow.appendChild(removeBtn);
-        
-        div.appendChild(topRow);
-        div.appendChild(dspListDiv);
+        div.appendChild(keyInput);
+        div.appendChild(covInput);
+        div.appendChild(removeBtn);
         container.appendChild(div);
         
         generateCode();
     }
 
-    function renderSSPOptIn() {
-        const container = document.getElementById('ssp_opt_in');
-        container.innerHTML = '';
+    function renderCoreCheckboxes() {
+        const dspContainer = document.getElementById('c_dsps');
+        const sspContainer = document.getElementById('c_ssps');
+        dspContainer.innerHTML = '';
+        sspContainer.innerHTML = '';
+        initialCoreState = { dsps: {}, ssps: {} };
 
+        // DSPs
+        CONFIG.dsps.forEach(dsp => {
+            const hasVermarkter = dsp.supportedVermarkter && dsp.supportedVermarkter.includes(currentVermarkter.id);
+            initialCoreState.dsps[dsp.id] = hasVermarkter;
+            dspContainer.appendChild(createCheckbox('dsp', dsp.id, dsp.name, hasVermarkter));
+        });
+
+        // SSPs
         CONFIG.ssps.forEach(ssp => {
-            const isChecked = currentVermarkter.supportedSSPs && currentVermarkter.supportedSSPs.includes(ssp.id);
-            container.appendChild(createCheckbox('ssp_opt', ssp.id, ssp.name, isChecked));
+            const hasVermarkter = ssp.supportedVermarkter && ssp.supportedVermarkter.includes(currentVermarkter.id);
+            initialCoreState.ssps[ssp.id] = hasVermarkter;
+            sspContainer.appendChild(createCheckbox('ssp', ssp.id, ssp.name, hasVermarkter));
         });
     }
 
@@ -529,13 +373,6 @@
                 if (idCov !== '') {
                     idObj.coverage = parseInt(idCov);
                 }
-                
-                const excludedDSPs = [];
-                idRow.querySelectorAll('.dsp-exclude-cb:checked').forEach(cb => {
-                    excludedDSPs.push(cb.value);
-                });
-                
-                idObj.excludedDSPs = excludedDSPs;
                 idsList.push(idObj);
             });
             
@@ -544,12 +381,6 @@
             }
             
             vObj.supportedInventoryTypes.push(invObj);
-        });
-
-        // Extract SSP Opt-Ins
-        vObj.supportedSSPs = [];
-        document.querySelectorAll('#ssp_opt_in input:checked').forEach(cb => {
-            vObj.supportedSSPs.push(cb.value);
         });
 
         // Format Vermarkter JS
@@ -563,6 +394,55 @@ if (!window.OVK_LANDSCAPE_CONFIG.vermarkter) {
 window.OVK_LANDSCAPE_CONFIG.vermarkter.push(${JSON.stringify(vObj, null, 2).replace(/"([^"]+)":/g, '$1:')});`;
         
         document.getElementById('codeVermarkter').textContent = jsCode;
+
+        // 2. Build Core changes
+        let coreChanges = [];
+        
+        // Check DSPs
+        document.querySelectorAll('#c_dsps input').forEach(cb => {
+            const dspId = cb.value;
+            const isChecked = cb.checked;
+            const wasChecked = initialCoreState.dsps[dspId];
+            
+            if (isChecked !== wasChecked) {
+                const dsp = CONFIG.dsps.find(d => d.id === dspId);
+                let currentVermarkters = [...(dsp.supportedVermarkter || [])];
+                
+                if (isChecked) {
+                    if (!currentVermarkters.includes(currentVermarkter.id)) currentVermarkters.push(currentVermarkter.id);
+                } else {
+                    currentVermarkters = currentVermarkters.filter(v => v !== currentVermarkter.id);
+                }
+                
+                coreChanges.push(`// In core.js -> dsps -> id: "${dspId}"\nsupportedVermarkter: ${JSON.stringify(currentVermarkters)}`);
+            }
+        });
+
+        // Check SSPs
+        document.querySelectorAll('#c_ssps input').forEach(cb => {
+            const sspId = cb.value;
+            const isChecked = cb.checked;
+            const wasChecked = initialCoreState.ssps[sspId];
+            
+            if (isChecked !== wasChecked) {
+                const ssp = CONFIG.ssps.find(s => s.id === sspId);
+                let currentVermarkters = [...(ssp.supportedVermarkter || [])];
+                
+                if (isChecked) {
+                    if (!currentVermarkters.includes(currentVermarkter.id)) currentVermarkters.push(currentVermarkter.id);
+                } else {
+                    currentVermarkters = currentVermarkters.filter(v => v !== currentVermarkter.id);
+                }
+                
+                coreChanges.push(`// In core.js -> ssps -> id: "${sspId}"\nsupportedVermarkter: ${JSON.stringify(currentVermarkters)}`);
+            }
+        });
+
+        if (coreChanges.length === 0) {
+            document.getElementById('codeCore').textContent = '// Keine Änderungen an der core.js erforderlich.';
+        } else {
+            document.getElementById('codeCore').textContent = coreChanges.join('\n\n');
+        }
     }
 
     function copyToClipboard(elementId) {
@@ -570,54 +450,6 @@ window.OVK_LANDSCAPE_CONFIG.vermarkter.push(${JSON.stringify(vObj, null, 2).repl
         navigator.clipboard.writeText(text).then(() => {
             alert('Code kopiert!');
         });
-    }
-
-    async function publishConfig() {
-        const code = document.getElementById('codeVermarkter').textContent;
-        const statusEl = document.getElementById('publishStatus');
-        
-        if (!currentVermarkter) {
-            alert("Kein Vermarkter ausgewählt!");
-            return;
-        }
-        if (!sessionPassword) {
-            alert("Nicht angemeldet!");
-            return;
-        }
-
-        const btn = document.getElementById('publishBtn');
-        btn.disabled = true;
-        btn.textContent = "Speichert...";
-        statusEl.style.display = 'block';
-        statusEl.textContent = 'Verbindung wird hergestellt...';
-        statusEl.style.color = '#aaa';
-
-        try {
-            const res = await fetch(WORKER_URL, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    vermarkterId: currentVermarkter.id,
-                    password: sessionPassword,
-                    code: code
-                })
-            });
-
-            if (res.ok) {
-                statusEl.textContent = "Erfolgreich gespeichert! Die Map wird beim nächsten Neuladen aktualisiert.";
-                statusEl.style.color = "#137333";
-            } else {
-                const errText = await res.text();
-                statusEl.textContent = "Fehler: " + errText;
-                statusEl.style.color = "#c81e1e";
-            }
-        } catch(e) {
-            statusEl.textContent = "Netzwerkfehler: " + e.message;
-            statusEl.style.color = "#c81e1e";
-        }
-        
-        btn.disabled = false;
-        btn.textContent = "Änderungen speichern & veröffentlichen";
     }
 
     // Run on load

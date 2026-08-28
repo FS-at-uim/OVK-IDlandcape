@@ -166,13 +166,6 @@ document.addEventListener("DOMContentLoaded", async () => {
 
       // 5. Vermarkter normalisieren
       if (Array.isArray(window.OVK_LANDSCAPE_CONFIG.vermarkter)) {
-        // Dedupliziere Vermarkter anhand ihrer ID (Sicherheit gegen mehrfaches Laden)
-        const uniqueV = new Map();
-        window.OVK_LANDSCAPE_CONFIG.vermarkter.forEach(v => {
-            uniqueV.set(v.id, v);
-        });
-        window.OVK_LANDSCAPE_CONFIG.vermarkter = Array.from(uniqueV.values());
-        
         window.OVK_LANDSCAPE_CONFIG.vermarkter.forEach(v => {
           let aggregatedIds = [];
           if (Array.isArray(v.supportedInventoryTypes)) {
@@ -579,42 +572,9 @@ document.addEventListener("DOMContentLoaded", async () => {
           if (!d.supportedSSPs.includes(s.id)) return;
           
           OVK_LANDSCAPE_CONFIG.vermarkter.forEach(v => {
-            // Vermarkter must explicitly opt into the SSP
-            if (!v.supportedSSPs || !v.supportedSSPs.includes(s.id)) return;
-            
-            // Check if there is at least one valid ID overlap (considering DSP opt-outs)
-            let hasValidId = false;
-            
-            const vIds = new Map();
-            if (v.supportedInventoryTypes) {
-                v.supportedInventoryTypes.forEach(inv => {
-                    if (inv.supportedIds) {
-                        inv.supportedIds.forEach(idObj => {
-                            const idStr = typeof idObj === 'string' ? idObj : idObj.id;
-                            const exclusions = typeof idObj === 'string' ? [] : (idObj.excludedDSPs || []);
-                            if (!vIds.has(idStr)) {
-                                vIds.set(idStr, new Set(exclusions));
-                            } else {
-                                exclusions.forEach(ex => vIds.get(idStr).add(ex));
-                            }
-                        });
-                    }
-                });
-            }
-            
-            const sspIds = s.supportedIds.map(i => typeof i === 'string' ? i : i.id);
-            const dspIds = d.supportedIds.map(i => typeof i === 'string' ? i : i.id);
-            
-            for (let [idStr, exclusions] of vIds.entries()) {
-                if (sspIds.includes(idStr) && dspIds.includes(idStr)) {
-                    if (!exclusions.has(d.id)) {
-                        hasValidId = true;
-                        break;
-                    }
-                }
-            }
-            
-            if (!hasValidId) return;
+            // DSP and SSP both support Vermarkter
+            if (!d.supportedVermarkter.includes(v.id)) return;
+            if (!s.supportedVermarkter.includes(v.id)) return;
             
             allPaths.push({
               usecase: u.id,
@@ -858,41 +818,10 @@ document.addEventListener("DOMContentLoaded", async () => {
         return ssp ? ssp.name : sid;
       }).join(", ");
 
-      const vNames = OVK_LANDSCAPE_CONFIG.vermarkter.filter(v => {
-        if (!v.supportedSSPs) return false;
-        const vIds = new Map();
-        if (v.supportedInventoryTypes) {
-            v.supportedInventoryTypes.forEach(inv => {
-                if (inv.supportedIds) {
-                    inv.supportedIds.forEach(idObj => {
-                        const idStr = typeof idObj === 'string' ? idObj : idObj.id;
-                        const exclusions = typeof idObj === 'string' ? [] : (idObj.excludedDSPs || []);
-                        if (!vIds.has(idStr)) vIds.set(idStr, new Set(exclusions));
-                        else exclusions.forEach(ex => vIds.get(idStr).add(ex));
-                    });
-                }
-            });
-        }
-        let valid = false;
-        for (const sspId of item.supportedSSPs) {
-            if (v.supportedSSPs.includes(sspId)) {
-                const ssp = OVK_LANDSCAPE_CONFIG.ssps.find(s => s.id === sspId);
-                if (ssp) {
-                    const sspIds = ssp.supportedIds.map(i => typeof i === 'string' ? i : i.id);
-                    const dspIds = item.supportedIds.map(i => typeof i === 'string' ? i : i.id);
-                    for (let [idStr, exclusions] of vIds.entries()) {
-                        if (sspIds.includes(idStr) && dspIds.includes(idStr)) {
-                            if (!exclusions.has(item.id)) {
-                                valid = true; break;
-                            }
-                        }
-                    }
-                }
-            }
-            if (valid) break;
-        }
-        return valid;
-      }).map(v => v.name).join(", ");
+      const vNames = item.supportedVermarkter.map(vid => {
+        const v = OVK_LANDSCAPE_CONFIG.vermarkter.find(ver => ver.id === vid);
+        return v ? v.name : vid;
+      }).join(", ");
 
       const idsHtml = getIdsDetailsHtml(item.supportedIds);
 
@@ -907,9 +836,10 @@ document.addEventListener("DOMContentLoaded", async () => {
       const item = OVK_LANDSCAPE_CONFIG.ssps.find(s => s.id === id);
       title = `SSP: ${item.name}`;
 
-      const vNames = OVK_LANDSCAPE_CONFIG.vermarkter
-        .filter(v => v.supportedSSPs && v.supportedSSPs.includes(item.id))
-        .map(v => v.name).join(", ");
+      const vNames = item.supportedVermarkter.map(vid => {
+        const v = OVK_LANDSCAPE_CONFIG.vermarkter.find(ver => ver.id === vid);
+        return v ? v.name : vid;
+      }).join(", ");
 
       const catLabel = item.category === "curation" 
         ? "Curation SSP (FC & Data Targeting möglich)" 

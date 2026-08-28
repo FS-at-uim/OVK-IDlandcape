@@ -1,0 +1,658 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Core Config Editor - OVK ID Landscape</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      margin: 0;
+      padding: 20px;
+      background: #121212;
+      color: #e0e0e0;
+    }
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      border-bottom: 1px solid #333;
+      padding-bottom: 15px;
+    }
+    h1 { color: #fff; margin: 0; font-size: 1.8rem; }
+    .nav-links a {
+      color: #3b82f6;
+      text-decoration: none;
+      margin-left: 15px;
+      font-weight: 500;
+    }
+    .nav-links a:hover { text-decoration: underline; }
+    
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+      display: flex;
+      gap: 20px;
+    }
+    .form-section, .code-section {
+      flex: 1;
+      background: #1e1e1e;
+      padding: 20px;
+      border-radius: 8px;
+    }
+    .code-section {
+      position: sticky;
+      top: 20px;
+      height: calc(100vh - 100px);
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+    }
+    h2, h3 { color: #fff; margin-top: 0; }
+    h3 { margin-top: 20px; border-bottom: 1px solid #333; padding-bottom: 5px; font-size: 1.1rem; }
+    
+    .tabs {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 20px;
+      border-bottom: 2px solid #333;
+      padding-bottom: 10px;
+    }
+    .tab-btn {
+      background: #2c2c2c;
+      color: #aaa;
+      border: 1px solid #444;
+      padding: 8px 16px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: 600;
+    }
+    .tab-btn.active {
+      background: #0056cc;
+      color: #fff;
+      border-color: #0056cc;
+    }
+    
+    label { display: block; margin-top: 15px; font-weight: bold; font-size: 0.9em; color: #aaa; }
+    select, input[type="text"], input[type="color"], textarea {
+      width: 100%;
+      padding: 10px;
+      margin-top: 5px;
+      background: #2c2c2c;
+      border: 1px solid #444;
+      color: #fff;
+      border-radius: 4px;
+      box-sizing: border-box;
+    }
+    .color-picker-row {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      margin-top: 5px;
+    }
+    .color-picker-row input[type="color"] {
+      width: 50px;
+      height: 40px;
+      padding: 2px;
+      cursor: pointer;
+    }
+    .color-picker-row input[type="text"] {
+      flex: 1;
+    }
+    
+    .checkbox-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 10px;
+    }
+    .checkbox-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: #2c2c2c;
+      padding: 8px 12px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 0.88em;
+    }
+    .checkbox-item:hover { background: #383838; }
+    .checkbox-item input { margin: 0; cursor: pointer; }
+    
+    .btn-group {
+      display: flex;
+      gap: 10px;
+      margin-top: 20px;
+    }
+    button {
+      background: #137333;
+      color: white;
+      border: none;
+      padding: 10px 18px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+    button:hover { background: #0f5c28; }
+    .remove-btn { background: #c81e1e; }
+    .remove-btn:hover { background: #a01818; }
+    .add-btn { background: #0056cc; }
+    .add-btn:hover { background: #004199; }
+    .copy-btn { margin-top: 10px; background: #333; }
+    .copy-btn:hover { background: #444; }
+    
+    pre {
+      background: #000;
+      padding: 15px;
+      border-radius: 4px;
+      overflow-x: auto;
+      color: #569cd6;
+      white-space: pre-wrap;
+      font-size: 0.88em;
+      flex: 1;
+    }
+    .badge-info {
+      font-size: 0.8em;
+      color: #888;
+      margin-top: 4px;
+    }
+  </style>
+</head>
+<body>
+
+<div class="header">
+  <h1>Core Config Editor (`config/core.js`)</h1>
+  <div class="nav-links">
+    <a href="index.html" target="_blank">OVK Landscape Map öffnen</a>
+    <a href="vermarkter_editor.html" target="_blank">Vermarkter Editor öffnen</a>
+  </div>
+</div>
+
+<div class="tabs">
+  <button class="tab-btn active" onclick="switchTab('dsps')">DSPs</button>
+  <button class="tab-btn" onclick="switchTab('ssps')">SSPs</button>
+  <button class="tab-btn" onclick="switchTab('ids')">ID-Systeme</button>
+  <button class="tab-btn" onclick="switchTab('usecases')">Usecases</button>
+  <button class="tab-btn" onclick="switchTab('dataPartners')">Data Partners</button>
+</div>
+
+<div class="container">
+  <!-- Left Form Section -->
+  <div class="form-section">
+    <div style="display: flex; gap: 10px; align-items: flex-end;">
+      <div style="flex: 1;">
+        <label id="itemSelectLabel" for="itemSelect">Eintrag auswählen:</label>
+        <select id="itemSelect" onchange="loadSelectedItem()"></select>
+      </div>
+      <button class="add-btn" onclick="createNewItem()">+ Neu erstellen</button>
+    </div>
+
+    <div id="editorForm" style="display:none; margin-top: 25px;">
+      <h2 id="editorFormTitle">Eintrag bearbeiten</h2>
+      
+      <div id="dynamicFormFields"></div>
+
+      <div class="btn-group">
+        <button type="button" onclick="saveCurrentItem()">Speichern / Übernehmen</button>
+        <button type="button" class="remove-btn" onclick="deleteCurrentItem()">Eintrag löschen</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Right Code Preview Section -->
+  <div class="code-section">
+    <h2 id="previewTitle">Vorschau: `config/core.js`</h2>
+    <p id="previewSubtitle" style="font-size: 0.85em; color: #aaa;">Generierter Inhalt der vollständigen <code>config/core.js</code>.</p>
+    
+    <pre id="codePreview">// Wähle einen Eintrag aus oder ändere Daten</pre>
+    <div style="display: flex; gap: 10px;">
+      <button class="copy-btn" onclick="copyCode()">Code kopieren</button>
+      <button class="copy-btn" style="background: #0056cc;" onclick="downloadCode()">Datei herunterladen</button>
+    </div>
+  </div>
+</div>
+
+<!-- Load all core and Vermarkter config files with dynamic cache-busting -->
+<script>
+    (async function() {
+        let files = ['config/core.js', 'config/data_partners.js'];
+        try {
+            const dirRes = await fetch('config/vermarkter/');
+            if (dirRes.ok) {
+                const dirHtml = await dirRes.text();
+                const matches = dirHtml.match(/href="([^"]+\.js)"/g);
+                if (matches) {
+                    const vermarkterFiles = matches.map(m => 'config/vermarkter/' + m.match(/"([^"]+)"/)[1]);
+                    files = files.concat(vermarkterFiles);
+                }
+            } else {
+                throw new Error("HTTP Status " + dirRes.status);
+            }
+        } catch(e) {
+            console.warn("Verzeichnis /config/vermarkter/ konnte nicht ausgelesen werden. Verwende Fallback-Liste.", e);
+            files = files.concat([
+                'config/vermarkter/ad_alliance.js',
+                'config/vermarkter/bcn.js',
+                'config/vermarkter/funke.js',
+                'config/vermarkter/iqd.js',
+                'config/vermarkter/media_impact.js',
+                'config/vermarkter/score.js',
+                'config/vermarkter/seven_one_media.js',
+                'config/vermarkter/stroeer.js',
+                'config/vermarkter/uim.js',
+                'config/vermarkter/visoon.js'
+            ]);
+        }
+        
+        for (const f of files) {
+            try {
+                const res = await fetch(f + '?t=' + Date.now());
+                const code = await res.text();
+                (new Function(code))();
+            } catch(e) {
+                console.error("Fehler beim Laden von " + f, e);
+            }
+        }
+        
+        if (typeof init === 'function') {
+            init();
+        }
+    })();
+</script>
+
+<script>
+  let activeTab = 'dsps';
+  let coreConfig = null;
+  let availableVermarkter = [];
+  let currentItemId = null;
+
+  function init() {
+    CONFIG = window.OVK_LANDSCAPE_CONFIG;
+    if (!window.OVK_LANDSCAPE_CONFIG) {
+      alert("Fehler: OVK_LANDSCAPE_CONFIG konnte nicht geladen werden.");
+      return;
+    }
+    // Deep clone core config to allow interactive editing
+    coreConfig = JSON.parse(JSON.stringify(window.OVK_LANDSCAPE_CONFIG));
+    
+    // Deduplicate dataPartners if any duplicates exist
+    if (Array.isArray(coreConfig.dataPartners)) {
+      const seenDp = new Set();
+      coreConfig.dataPartners = coreConfig.dataPartners.filter(dp => {
+        if (!dp.id || seenDp.has(dp.id)) return false;
+        seenDp.add(dp.id);
+        return true;
+      });
+    } else {
+      coreConfig.dataPartners = [];
+    }
+
+    // Extract available Vermarkter dynamically from loaded Vermarkter configs
+    if (Array.isArray(window.OVK_LANDSCAPE_CONFIG.vermarkter)) {
+      availableVermarkter = window.OVK_LANDSCAPE_CONFIG.vermarkter.map(v => ({
+        id: v.id,
+        name: v.name || v.id
+      }));
+    }
+
+    switchTab('dsps');
+  }
+
+  function switchTab(tabName) {
+    activeTab = tabName;
+    document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+    const activeBtn = document.querySelector(`.tab-btn[onclick="switchTab('${tabName}')"]`);
+    if (activeBtn) activeBtn.classList.add('active');
+
+    populateSelect();
+  }
+
+  function populateSelect() {
+    const select = document.getElementById('itemSelect');
+    select.innerHTML = '';
+    
+    const items = coreConfig[activeTab] || [];
+    
+    if (items.length === 0) {
+      const opt = document.createElement('option');
+      opt.value = '';
+      opt.textContent = '-- Keine Einträge vorhanden --';
+      select.appendChild(opt);
+      document.getElementById('editorForm').style.display = 'none';
+    } else {
+      items.forEach(item => {
+        const opt = document.createElement('option');
+        opt.value = item.id;
+        opt.textContent = `${item.name || item.id} (${item.id})`;
+        select.appendChild(opt);
+      });
+      select.value = items[0].id;
+      loadSelectedItem();
+    }
+    generateCode();
+  }
+
+  function loadSelectedItem() {
+    const select = document.getElementById('itemSelect');
+    currentItemId = select.value;
+    if (!currentItemId) {
+      document.getElementById('editorForm').style.display = 'none';
+      return;
+    }
+
+    const item = (coreConfig[activeTab] || []).find(i => i.id === currentItemId);
+    if (!item) return;
+
+    renderFormFields(item);
+    document.getElementById('editorForm').style.display = 'block';
+  }
+
+  function renderFormFields(item) {
+    const container = document.getElementById('dynamicFormFields');
+    container.innerHTML = '';
+
+    if (activeTab === 'dsps') {
+      container.appendChild(createInputField('id', 'ID (technischer Schlüssel)', item.id, true));
+      container.appendChild(createInputField('name', 'DSP Name', item.name));
+      container.appendChild(createInputField('logo', 'Logo Kürzel', item.logo));
+
+      container.appendChild(createCheckboxGroup('supportedUsecases', 'Unterstützte Usecases', coreConfig.usecases, item.supportedUsecases || []));
+      container.appendChild(createCheckboxGroup('supportedSSPs', 'Kompatible SSPs', coreConfig.ssps, item.supportedSSPs || []));
+      
+      // Dynamic Vermarkter Options loaded from vermarkter configs
+      container.appendChild(createCheckboxGroup('supportedVermarkter', 'Kompatible Vermarkter (aus Vermarkter-Configs)', availableVermarkter, item.supportedVermarkter || []));
+      
+      container.appendChild(createCheckboxGroup('supportedIds', 'Unterstützte ID-Systeme', coreConfig.ids, item.supportedIds || []));
+
+    } else if (activeTab === 'ssps') {
+      container.appendChild(createInputField('id', 'ID (technischer Schlüssel)', item.id, true));
+      container.appendChild(createInputField('name', 'SSP Name', item.name));
+      
+      const catOptions = [
+        { id: 'standard', name: 'Standard SSP (ID wird nur durchgereicht)' },
+        { id: 'curation', name: 'Curation SSP (FC & Targeting möglich)' }
+      ];
+      container.appendChild(createSelectField('category', 'Kategorie', catOptions, item.category || 'standard'));
+
+      container.appendChild(createCheckboxGroup('supportedUsecases', 'Unterstützte Usecases', coreConfig.usecases, item.supportedUsecases || []));
+      
+      // Dynamic Vermarkter Options loaded from vermarkter configs
+      container.appendChild(createCheckboxGroup('supportedVermarkter', 'Angebundene Vermarkter (aus Vermarkter-Configs)', availableVermarkter, item.supportedVermarkter || []));
+      
+      container.appendChild(createCheckboxGroup('supportedIds', 'Unterstützte ID-Systeme', coreConfig.ids, item.supportedIds || []));
+
+    } else if (activeTab === 'ids') {
+      container.appendChild(createInputField('id', 'ID (technischer Schlüssel)', item.id, true));
+      container.appendChild(createInputField('name', 'Vollständiger Name', item.name));
+      container.appendChild(createInputField('shortName', 'Kurzname (Badge-Text)', item.shortName));
+      
+      // Color pickers with hex text input
+      container.appendChild(createColorPickerField('color', 'Hintergrundfarbe (Color)', item.color || '#e0f2fe'));
+      container.appendChild(createColorPickerField('textColor', 'Textfarbe (Text Color)', item.textColor || '#0056cc'));
+      
+      container.appendChild(createTextareaField('description', 'Beschreibung', item.description || ''));
+
+    } else if (activeTab === 'usecases') {
+      container.appendChild(createInputField('id', 'ID (technischer Schlüssel)', item.id, true));
+      container.appendChild(createInputField('name', 'Usecase Name', item.name));
+      container.appendChild(createTextareaField('description', 'Beschreibung', item.description || ''));
+
+    } else if (activeTab === 'dataPartners') {
+      container.appendChild(createInputField('id', 'ID (technischer Schlüssel)', item.id, true));
+      container.appendChild(createInputField('name', 'Data Partner Name', item.name));
+      container.appendChild(createTextareaField('description', 'Beschreibung', item.description || ''));
+
+      container.appendChild(createCheckboxGroup('supportedIds', 'Unterstützte ID-Systeme', coreConfig.ids, item.supportedIds || []));
+      container.appendChild(createCheckboxGroup('supportedDSPs', 'Unterstützte DSPs', coreConfig.dsps, item.supportedDSPs || []));
+      container.appendChild(createCheckboxGroup('supportedSSPs', 'Unterstützte Curation SSPs', coreConfig.ssps.filter(s => s.category === 'curation'), item.supportedSSPs || []));
+    }
+  }
+
+  // --- Helper DOM Creators ---
+
+  function createInputField(fieldKey, labelText, value = '', disabled = false) {
+    const div = document.createElement('div');
+    const lbl = document.createElement('label');
+    lbl.textContent = labelText;
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.dataset.field = fieldKey;
+    input.value = value;
+    input.disabled = disabled;
+    input.oninput = () => { saveCurrentItemToMemory(); generateCode(); };
+    div.appendChild(lbl);
+    div.appendChild(input);
+    return div;
+  }
+
+  function createSelectField(fieldKey, labelText, options = [], selectedVal = '') {
+    const div = document.createElement('div');
+    const lbl = document.createElement('label');
+    lbl.textContent = labelText;
+    const select = document.createElement('select');
+    select.dataset.field = fieldKey;
+    options.forEach(optItem => {
+      const opt = document.createElement('option');
+      opt.value = optItem.id;
+      opt.textContent = optItem.name;
+      if (optItem.id === selectedVal) opt.selected = true;
+      select.appendChild(opt);
+    });
+    select.onchange = () => { saveCurrentItemToMemory(); generateCode(); };
+    div.appendChild(lbl);
+    div.appendChild(select);
+    return div;
+  }
+
+  function createTextareaField(fieldKey, labelText, value = '') {
+    const div = document.createElement('div');
+    const lbl = document.createElement('label');
+    lbl.textContent = labelText;
+    const txt = document.createElement('textarea');
+    txt.rows = 3;
+    txt.dataset.field = fieldKey;
+    txt.value = value;
+    txt.oninput = () => { saveCurrentItemToMemory(); generateCode(); };
+    div.appendChild(lbl);
+    div.appendChild(txt);
+    return div;
+  }
+
+  function createColorPickerField(fieldKey, labelText, hexValue = '#ffffff') {
+    const div = document.createElement('div');
+    const lbl = document.createElement('label');
+    lbl.textContent = labelText;
+    
+    const row = document.createElement('div');
+    row.className = 'color-picker-row';
+    
+    const colorInput = document.createElement('input');
+    colorInput.type = 'color';
+    colorInput.value = hexValue;
+    
+    const textInput = document.createElement('input');
+    textInput.type = 'text';
+    textInput.dataset.field = fieldKey;
+    textInput.value = hexValue;
+    
+    colorInput.oninput = () => {
+      textInput.value = colorInput.value;
+      saveCurrentItemToMemory();
+      generateCode();
+    };
+    textInput.oninput = () => {
+      colorInput.value = textInput.value;
+      saveCurrentItemToMemory();
+      generateCode();
+    };
+
+    row.appendChild(colorInput);
+    row.appendChild(textInput);
+    div.appendChild(lbl);
+    div.appendChild(row);
+    return div;
+  }
+
+  function createCheckboxGroup(fieldKey, labelText, options = [], checkedList = []) {
+    const div = document.createElement('div');
+    const h3 = document.createElement('h3');
+    h3.textContent = labelText;
+    div.appendChild(h3);
+
+    const group = document.createElement('div');
+    group.className = 'checkbox-group';
+    group.dataset.fieldGroup = fieldKey;
+
+    options.forEach(opt => {
+      const lbl = document.createElement('label');
+      lbl.className = 'checkbox-item';
+      const cb = document.createElement('input');
+      cb.type = 'checkbox';
+      cb.value = opt.id;
+      cb.checked = checkedList.includes(opt.id);
+      cb.onchange = () => { saveCurrentItemToMemory(); generateCode(); };
+      lbl.appendChild(cb);
+      lbl.appendChild(document.createTextNode(`${opt.name || opt.id} (${opt.id})`));
+      group.appendChild(lbl);
+    });
+
+    div.appendChild(group);
+    return div;
+  }
+
+  function saveCurrentItemToMemory() {
+    if (!currentItemId) return;
+    const item = (coreConfig[activeTab] || []).find(i => i.id === currentItemId);
+    if (!item) return;
+
+    // Single input & select & textarea fields
+    document.querySelectorAll('#dynamicFormFields input[data-field], #dynamicFormFields select[data-field], #dynamicFormFields textarea[data-field]').forEach(el => {
+      const field = el.dataset.field;
+      item[field] = el.value;
+    });
+
+    // Checkbox groups
+    document.querySelectorAll('#dynamicFormFields [data-field-group]').forEach(groupEl => {
+      const field = groupEl.dataset.fieldGroup;
+      const selectedValues = [];
+      groupEl.querySelectorAll('input[type="checkbox"]:checked').forEach(cb => {
+        selectedValues.push(cb.value);
+      });
+      item[field] = selectedValues;
+    });
+  }
+
+  function createNewItem() {
+    const newId = prompt("Bitte eindeutige ID (technischer Schlüssel, z. B. 'my_new_dsp') eingeben:");
+    if (!newId) return;
+    
+    const cleanId = newId.trim().toLowerCase().replace(/\s+/g, '_');
+    const existing = (coreConfig[activeTab] || []).find(i => i.id === cleanId);
+    if (existing) {
+      alert(`Fehler: Eine ID '${cleanId}' existiert in ${activeTab} bereits.`);
+      return;
+    }
+
+    const newItem = { id: cleanId, name: newId };
+    if (activeTab === 'dsps') {
+      newItem.logo = cleanId.toUpperCase();
+      newItem.supportedUsecases = [];
+      newItem.supportedSSPs = [];
+      newItem.supportedVermarkter = [];
+      newItem.supportedIds = [];
+    } else if (activeTab === 'ssps') {
+      newItem.category = 'standard';
+      newItem.supportedUsecases = [];
+      newItem.supportedVermarkter = [];
+      newItem.supportedIds = [];
+    } else if (activeTab === 'ids') {
+      newItem.shortName = newId;
+      newItem.color = '#e0f2fe';
+      newItem.textColor = '#0056cc';
+      newItem.description = '';
+    } else if (activeTab === 'usecases') {
+      newItem.description = '';
+    } else if (activeTab === 'dataPartners') {
+      newItem.description = '';
+      newItem.supportedIds = [];
+      newItem.supportedDSPs = [];
+      newItem.supportedSSPs = [];
+    }
+
+    coreConfig[activeTab].push(newItem);
+    populateSelect();
+    document.getElementById('itemSelect').value = cleanId;
+    loadSelectedItem();
+  }
+
+  function deleteCurrentItem() {
+    if (!currentItemId) return;
+    if (!confirm(`Soll der Eintrag '${currentItemId}' wirklich gelöscht werden?`)) return;
+
+    coreConfig[activeTab] = coreConfig[activeTab].filter(i => i.id !== currentItemId);
+    populateSelect();
+  }
+
+  function saveCurrentItem() {
+    saveCurrentItemToMemory();
+    generateCode();
+    alert("Änderungen wurden übernommen. Siehe Code-Vorschau rechts!");
+  }
+
+  function generateCode() {
+    saveCurrentItemToMemory();
+
+    const titleEl = document.getElementById('previewTitle');
+    const subtitleEl = document.getElementById('previewSubtitle');
+
+    if (activeTab === 'dataPartners') {
+      if (titleEl) titleEl.textContent = 'Vorschau: config/data_partners.js';
+      if (subtitleEl) subtitleEl.innerHTML = 'Generierter Inhalt von <code>config/data_partners.js</code>.';
+
+      const dpObj = coreConfig.dataPartners || [];
+      let jsCode = `// OVK ID Landscape Map - Data Partner Konfigurationsdaten\n\nif (!window.OVK_LANDSCAPE_CONFIG) {\n  window.OVK_LANDSCAPE_CONFIG = {};\n}\n\nwindow.OVK_LANDSCAPE_CONFIG.dataPartners = ${JSON.stringify(dpObj, null, 2).replace(/"([^"]+)":/g, '$1:')};\n\n// Für Node.js CommonJS-Umgebung (Validierung)\nif (typeof module !== 'undefined' && module.exports) {\n  module.exports = window.OVK_LANDSCAPE_CONFIG.dataPartners;\n}\n`;
+      document.getElementById('codePreview').textContent = jsCode;
+
+    } else {
+      if (titleEl) titleEl.textContent = 'Vorschau: config/core.js';
+      if (subtitleEl) subtitleEl.innerHTML = 'Generierter Inhalt der vollständigen <code>config/core.js</code>.';
+
+      const outputObj = {
+        ids: coreConfig.ids,
+        usecases: coreConfig.usecases,
+        dsps: coreConfig.dsps,
+        ssps: coreConfig.ssps
+      };
+
+      let jsCode = `// OVK ID Landscape Map - Core Konfigurationsdaten\n// IDs, Usecases, DSPs, SSPs\n\nwindow.OVK_LANDSCAPE_CONFIG = ${JSON.stringify(outputObj, null, 2).replace(/"([^"]+)":/g, '$1:')};\n\n// Für Node.js CommonJS-Umgebung (Validierung)\nif (typeof module !== 'undefined' && module.exports) {\n  module.exports = window.OVK_LANDSCAPE_CONFIG;\n}\n`;
+      document.getElementById('codePreview').textContent = jsCode;
+    }
+  }
+
+  function copyCode() {
+    const text = document.getElementById('codePreview').textContent;
+    const filename = activeTab === 'dataPartners' ? 'data_partners.js' : 'core.js';
+    navigator.clipboard.writeText(text).then(() => {
+      alert(`${filename} Code in die Zwischenablage kopiert!`);
+    });
+  }
+
+  function downloadCode() {
+    const text = document.getElementById('codePreview').textContent;
+    const filename = activeTab === 'dataPartners' ? 'data_partners.js' : 'core.js';
+    const blob = new Blob([text], { type: "text/javascript" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+
+  // window.onload = init; (aufgerufen durch Async-Loader)
+</script>
+</body>
+</html>

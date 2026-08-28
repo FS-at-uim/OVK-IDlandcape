@@ -7,13 +7,29 @@ if (!window.OVK_LANDSCAPE_CONFIG.vermarkter) {
 
 window.OVK_LANDSCAPE_CONFIG.vermarkter.push({
   id: "stroeer",
-  name: "Ströer",
-  description: "Vermarkter für Out-of-Home und digitale Medien.",
+  name: "Ströer Media Solutions GmbH",
+  description: " Vermarkter für Out-of-Home und digitale Medien",
   supportedInventoryTypes: [
-    { type: "desktop", coverage:  0},
-    { type: "mobile", coverage:  0}
+    {
+      type: "desktop",
+      supportedIds: [
+        {
+          id: "utiq",
+          excludedDSPs: []
+        }
+      ]
+    },
+    {
+      type: "mobile",
+      supportedIds: [
+        {
+          id: "utiq",
+          excludedDSPs: []
+        }
+      ]
+    }
   ],
-  supportedIds: [
-    { id: "utiq", coverage:  0}
+  supportedSSPs: [
+    "adform"
   ]
-}); 
+});

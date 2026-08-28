@@ -6,17 +6,16 @@ if (!window.OVK_LANDSCAPE_CONFIG.vermarkter) {
 }
 
 window.OVK_LANDSCAPE_CONFIG.vermarkter.push({
-  id: "bcn",
-  name: "BCN Brand Community Network",
-  description: "Mediavermarkter für Burda, Funke, Klambt, DeliusKlasing, Kouneli",
+  id: "score",
+  name: "Score Media Group",
+  description: " Vermarkter Regionale Tageszeitungen in Deutschland",
   supportedInventoryTypes: [
     {
       type: "desktop",
       supportedIds: [
         {
           id: "utiq",
-          coverage: 55,
-          excludedDSPs: []
+          coverage: 16
         }
       ]
     },
@@ -25,20 +24,9 @@ window.OVK_LANDSCAPE_CONFIG.vermarkter.push({
       supportedIds: [
         {
           id: "utiq",
-          coverage: 55,
-          excludedDSPs: []
+          coverage: 16
         }
       ]
     }
-  ],
-  supportedSSPs: [
-    "equativ",
-    "pubmatic",
-    "index_exchange",
-    "magnite",
-    "xandr",
-    "yieldlab",
-    "smartclip",
-    "adform"
   ]
 });

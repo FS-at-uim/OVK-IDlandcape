@@ -6,17 +6,19 @@ if (!window.OVK_LANDSCAPE_CONFIG.vermarkter) {
 }
 
 window.OVK_LANDSCAPE_CONFIG.vermarkter.push({
-  id: "bcn",
-  name: "BCN Brand Community Network",
-  description: "Mediavermarkter für Burda, Funke, Klambt, DeliusKlasing, Kouneli",
+  id: "ad_alliance",
+  name: "Ad Alliance GmbH",
+  description: " Vermarkter für RTL, HBOmax, Bauer, Funke, Media Impact",
   supportedInventoryTypes: [
     {
       type: "desktop",
       supportedIds: [
         {
-          id: "utiq",
-          coverage: 55,
-          excludedDSPs: []
+          id: "utiq"
+        },
+        {
+          id: "netid_utiq",
+          coverage: 30
         }
       ]
     },
@@ -25,20 +27,22 @@ window.OVK_LANDSCAPE_CONFIG.vermarkter.push({
       supportedIds: [
         {
           id: "utiq",
-          coverage: 55,
-          excludedDSPs: []
+          coverage: 30
+        },
+        {
+          id: "netid_utiq",
+          coverage: 30
+        }
+      ]
+    },
+    {
+      type: "ctv",
+      supportedIds: [
+        {
+          id: "netid_utiq",
+          coverage: 30
         }
       ]
     }
-  ],
-  supportedSSPs: [
-    "equativ",
-    "pubmatic",
-    "index_exchange",
-    "magnite",
-    "xandr",
-    "yieldlab",
-    "smartclip",
-    "adform"
   ]
 });

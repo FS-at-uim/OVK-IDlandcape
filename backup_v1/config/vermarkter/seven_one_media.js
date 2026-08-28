@@ -6,17 +6,15 @@ if (!window.OVK_LANDSCAPE_CONFIG.vermarkter) {
 }
 
 window.OVK_LANDSCAPE_CONFIG.vermarkter.push({
-  id: "score",
-  name: "Score Media Group",
-  description: " Vermarkter Regionale Tageszeitungen in Deutschland",
+  id: "seven_one_media",
+  name: "SevenOne Media GmbH",
+  description: " ",
   supportedInventoryTypes: [
     {
       type: "desktop",
       supportedIds: [
         {
-          id: "utiq",
-          coverage: 16,
-          excludedDSPs: []
+          id: "netid_utiq"
         }
       ]
     },
@@ -24,16 +22,25 @@ window.OVK_LANDSCAPE_CONFIG.vermarkter.push({
       type: "mobile",
       supportedIds: [
         {
-          id: "utiq",
-          coverage: 16,
-          excludedDSPs: []
+          id: "netid_utiq"
+        }
+      ]
+    },
+    {
+      type: "ctv",
+      supportedIds: [
+        {
+          id: "netid_utiq"
+        }
+      ]
+    },
+    {
+      type: "app",
+      supportedIds: [
+        {
+          id: "netid_utiq"
         }
       ]
     }
-  ],
-  supportedSSPs: [
-    "equativ",
-    "pubmatic",
-    "adform"
   ]
 });

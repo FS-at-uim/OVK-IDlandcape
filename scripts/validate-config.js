@@ -175,6 +175,25 @@ try {
   if (!Array.isArray(config.vermarkter)) {
     logError('config.vermarkter muss ein Array sein.');
   } else {
+    // Normalisiere Vermarkter supportedIds basierend auf supportedInventoryTypes wie in app.js
+    config.vermarkter.forEach(v => {
+      let aggregatedIds = [];
+      if (Array.isArray(v.supportedInventoryTypes)) {
+        v.supportedInventoryTypes.forEach(inv => {
+          if (Array.isArray(inv.supportedIds)) {
+            inv.supportedIds.forEach(idObj => {
+              let normalizedId = typeof idObj === 'string' ? idObj.toLowerCase() : idObj.id.toLowerCase();
+              let newIdObj = typeof idObj === 'string' ? { id: normalizedId } : { ...idObj, id: normalizedId };
+              if (!aggregatedIds.find(i => i.id === normalizedId)) {
+                aggregatedIds.push(newIdObj);
+              }
+            });
+          }
+        });
+      }
+      v.supportedIds = aggregatedIds;
+    });
+
     config.vermarkter.forEach((v, idx) => {
       const vName = v.name || `Vermarkter Index ${idx}`;
       if (!v.id) logError(`Vermarkter an Index ${idx} fehlt 'id'.`);

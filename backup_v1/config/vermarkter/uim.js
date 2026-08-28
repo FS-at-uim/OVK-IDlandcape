@@ -15,13 +15,11 @@ window.OVK_LANDSCAPE_CONFIG.vermarkter.push({
       supportedIds: [
         {
           id: "netid_utiq",
-          coverage: 67,
-          excludedDSPs: []
+          coverage: 67
         },
         {
           id: "netid",
-          coverage: 82,
-          excludedDSPs: []
+          coverage: 82
         }
       ]
     },
@@ -30,13 +28,11 @@ window.OVK_LANDSCAPE_CONFIG.vermarkter.push({
       supportedIds: [
         {
           id: "netid_utiq",
-          coverage: 76,
-          excludedDSPs: []
+          coverage: 76
         },
         {
           id: "netid",
-          coverage: 97,
-          excludedDSPs: []
+          coverage: 97
         }
       ]
     },
@@ -45,24 +41,13 @@ window.OVK_LANDSCAPE_CONFIG.vermarkter.push({
       supportedIds: [
         {
           id: "netid_utiq",
-          coverage: 67,
-          excludedDSPs: []
+          coverage: 67
         },
         {
           id: "netid",
-          coverage: 94,
-          excludedDSPs: []
+          coverage: 94
         }
       ]
     }
-  ],
-  supportedSSPs: [
-    "equativ",
-    "pubmatic",
-    "index_exchange",
-    "magnite",
-    "xandr",
-    "yieldlab",
-    "adform"
   ]
 });

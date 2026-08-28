@@ -6,16 +6,21 @@ if (!window.OVK_LANDSCAPE_CONFIG.vermarkter) {
 }
 
 window.OVK_LANDSCAPE_CONFIG.vermarkter.push({
-  id: "seven_one_media",
-  name: "SevenOne Media GmbH",
-  description: " ",
+  id: "media_impact",
+  name: "Media Impact",
+  description: " Vermarkter von Axel Springer.",
   supportedInventoryTypes: [
     {
       type: "desktop",
       supportedIds: [
         {
-          id: "netid_utiq",
-          excludedDSPs: []
+          id: "utiq"
+        },
+        {
+          id: "netid"
+        },
+        {
+          id: "netid_utiq"
         }
       ]
     },
@@ -23,17 +28,13 @@ window.OVK_LANDSCAPE_CONFIG.vermarkter.push({
       type: "mobile",
       supportedIds: [
         {
-          id: "netid_utiq",
-          excludedDSPs: []
-        }
-      ]
-    },
-    {
-      type: "ctv",
-      supportedIds: [
+          id: "utiq"
+        },
         {
-          id: "netid_utiq",
-          excludedDSPs: []
+          id: "netid"
+        },
+        {
+          id: "netid_utiq"
         }
       ]
     },
@@ -41,13 +42,15 @@ window.OVK_LANDSCAPE_CONFIG.vermarkter.push({
       type: "app",
       supportedIds: [
         {
-          id: "netid_utiq",
-          excludedDSPs: []
+          id: "utiq"
+        },
+        {
+          id: "netid"
+        },
+        {
+          id: "netid_utiq"
         }
       ]
     }
-  ],
-  supportedSSPs: [
-    "yieldlab"
   ]
 });
