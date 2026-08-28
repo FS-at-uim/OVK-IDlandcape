@@ -30,6 +30,7 @@ window.OVK_LANDSCAPE_CONFIG.vermarkter.push({
     }
   ],
   supportedSSPs: [
-    "adform"
+    "adform",
+    "sroerssp"
   ]
 });
