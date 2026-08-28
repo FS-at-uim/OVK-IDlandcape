@@ -63,7 +63,8 @@ window.OVK_LANDSCAPE_CONFIG = {
         "xandr",
         "yieldlab",
         "smartclip",
-        "adform"
+        "adform",
+        "sroerssp"
       ],
       supportedIds: [
         "utiq",
@@ -89,13 +90,15 @@ window.OVK_LANDSCAPE_CONFIG = {
         "xandr",
         "yieldlab",
         "smartclip",
-        "adform"
+        "adform",
+        "sroerssp"
       ],
       supportedIds: [
         "utiq",
         "netid_utiq",
         "netid"
-      ]
+      ],
+      supportedVermarkter: []
     },
     {
       id: "adform",
@@ -114,13 +117,15 @@ window.OVK_LANDSCAPE_CONFIG = {
         "xandr",
         "yieldlab",
         "smartclip",
-        "adform"
+        "adform",
+        "sroerssp"
       ],
       supportedIds: [
         "utiq",
         "netid_utiq",
         "netid"
-      ]
+      ],
+      supportedVermarkter: []
     },
     {
       id: "dv360",
