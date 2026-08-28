@@ -69,7 +69,8 @@ window.OVK_LANDSCAPE_CONFIG = {
         "utiq",
         "netid_utiq",
         "netid"
-      ]
+      ],
+      supportedVermarkter: []
     },
     {
       id: "active_agent",
@@ -155,7 +156,8 @@ window.OVK_LANDSCAPE_CONFIG = {
         "utiq",
         "netid_utiq",
         "netid"
-      ]
+      ],
+      supportedVermarkter: []
     },
     {
       id: "pubmatic",
@@ -238,6 +240,20 @@ window.OVK_LANDSCAPE_CONFIG = {
         "utiq",
         "netid_utiq",
         "netid"
+      ]
+    },
+    {
+      id: "sroerssp",
+      name: "Ströer SSP",
+      category: "standard",
+      supportedUsecases: [
+        "targeting_pre"
+      ],
+      supportedVermarkter: [
+        "stroeer"
+      ],
+      supportedIds: [
+        "utiq"
       ]
     }
   ]
