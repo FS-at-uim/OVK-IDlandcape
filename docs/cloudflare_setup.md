@@ -62,7 +62,11 @@ Füge nun folgende Variablen hinzu (Wähle immer den Button `Encrypt` aus, damit
     *   **Name:** `ADMIN_PASSWORD`
     *   **Value:** Das Master-Passwort für dich als Admin (damit du alle Vermarkter bearbeiten kannst).
     *   *Klicke auf `Encrypt`!*
-*   **Variable 6: (Optional - Für sicheres Testen)**
+*   **Variable 6: (Optional - Wenn das Projekt in einem Unterordner liegt)**
+    *   **Name:** `GITHUB_BASE_PATH`
+    *   **Value:** `tools/identifier-landscape`
+    *   *Der Worker hängt diesen Pfad dann automatisch vor jeden Speichervorgang.*
+*   **Variable 7: (Optional - Für sicheres Testen)**
     *   **Name:** `GITHUB_BRANCH`
     *   **Value:** `v2-testing` (Oder der Name deines Test-Branches im originalen Repo)
     *   *Lässt du diese Variable weg, speichert der Worker standardmäßig in den `main` Branch.*

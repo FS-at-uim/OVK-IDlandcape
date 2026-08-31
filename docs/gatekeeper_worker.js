@@ -61,6 +61,13 @@ export default {
           return new Response('Ungültiges Target', { status: 400, headers: corsHeaders });
       }
 
+      // Base Path anwenden (falls das Projekt in einem Unterordner liegt)
+      const rawBasePath = env.GITHUB_BASE_PATH || '';
+      let basePath = rawBasePath.replace(/^\/+/, '').replace(/\/+$/, ''); // Entferne Slashes am Anfang/Ende
+      if (basePath.length > 0) {
+          path = `${basePath}/${path}`;
+      }
+
       // GitHub API Setup für Speicherung
       const owner = env.GITHUB_OWNER;
       const repo = env.GITHUB_REPO;

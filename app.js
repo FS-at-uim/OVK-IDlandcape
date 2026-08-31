@@ -732,6 +732,23 @@ document.addEventListener("DOMContentLoaded", async () => {
       }
     });
 
+    // Strict visual pruning for Data Partner:
+    // If a Data Partner is selected, only explicitly listed DSPs and SSPs should remain active visually.
+    if (selectedDataPartnerId) {
+      const dp = OVK_LANDSCAPE_CONFIG.dataPartners.find(d => d.id === selectedDataPartnerId);
+      if (dp) {
+        const dpDSPs = new Set(dp.supportedDSPs || []);
+        const dpSSPs = new Set(dp.supportedSSPs || []);
+        
+        for (let dId of activeDspIds) {
+          if (!dpDSPs.has(dId)) activeDspIds.delete(dId);
+        }
+        for (let sId of activeSspIds) {
+          if (!dpSSPs.has(sId)) activeSspIds.delete(sId);
+        }
+      }
+    }
+
     const isAnyFilterActive = !!(
       selectedUsecaseId || selectedDataPartnerId || selectedDspId || selectedSspId || selectedVermarkterId
     );
