@@ -15,7 +15,7 @@ window.OVK_LANDSCAPE_CONFIG.vermarkter.push({
       supportedIds: [
         {
           id: "netid_utiq",
-          coverage: 69,
+          coverage: 77,
           excludedDSPs: []
         },
         {
