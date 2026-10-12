@@ -13,6 +13,8 @@ window.OVK_LANDSCAPE_CONFIG.dataPartners = [
       "utiq"
     ],
     supportedDSPs: [
+      "ttd",
+      "active_agent",
       "adform"
     ],
     supportedSSPs: [

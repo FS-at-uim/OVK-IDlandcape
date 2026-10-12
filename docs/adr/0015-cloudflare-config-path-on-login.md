@@ -1,0 +1,8 @@
+# ADR 0015: Bereitstellung des Vermarkter-Config-Dateipfads über Cloudflare Login (Option A)
+
+- **Status**: Accepted
+- **Kontext**: Bislang gab es eine Asymmetrie zwischen Lade- und Speicherpfad: Der Vermarkter-Editor (`vermarkter_editor.html`) versuchte die Konfigurationsdateien clientseitig über unzuverlässiges HTML-Directory-Listing bzw. eine statische Fallback-Liste zu laden, während der Cloudflare Worker beim Speichern den Zielpfad autoritativ über seine Umgebungsvariablen (`GITHUB_BASE_PATH`) und Vermarkter-IDs generierte. Dies führte zu Entkopplung, Redundanz und fehlender Single Source of Truth.
+- **Entscheidung**: Umsetzung von Option A: Beim Aufruf der Login-Route (`POST /login`) ermittelt der Cloudflare Gatekeeper Worker über eine zentrale Funktion `resolvePath` die Pfade (`relativePath` und `fullPath` inkl. `GITHUB_BASE_PATH`) und liefert sie als Metadaten in der Login-Antwort an das Frontend zurück. Der Editor lädt nach erfolgreicher Authentifizierung gezielt die vom Worker übermittelte Konfigurationsdatei und zeigt den exakten Repository-Pfad in der Vorschau und Bestätigung an. Für Administratoren liefert der Worker die Liste aller aktiven Vermarkter basierend auf den konfigurierten `PWD_*`-Umgebungsvariablen zurück.
+- **Konsequenzen**: 
+  - *Vorteile*: Exakte Pfad-Parität zwischen Lese- und Speicherprozess; Vermarkter laden nur noch ihre eigene Konfiguration statt aller Dateien; kein unzuverlässiges Directory-Scraping; interne Repository-Pfade sind erst nach Authentifizierung sichtbar; keine zusätzlichen API-Routen oder Methoden nötig.
+  - *Nachteile*: Die Vermarkter-spezifische Konfiguration wird erst nach erfolgreichem Login geladen, nicht bereits vorab im blockierten Zustand hinter dem Login-Overlay.

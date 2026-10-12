@@ -44,10 +44,10 @@ Füge nun folgende Variablen hinzu (Wähle immer den Button `Encrypt` aus, damit
     *   *Klicke auf `Encrypt`!*
 *   **Variable 2:**
     *   **Name:** `GITHUB_OWNER`
-    *   **Value:** Dein GitHub Benutzername oder Org-Name (wo das Repo liegt, z.B. `fschenk`).
+    *   **Value:** `BVDW-org`
 *   **Variable 3:**
     *   **Name:** `GITHUB_REPO`
-    *   **Value:** Der Name deines Repositories (z.B. `Identifier` oder `OVK-IDlandscape`).
+    *   **Value:** `ovk-identifiersupport`
 *   **Variable 4: (Option A) JSON Passwörter (Alte Variante)**
     *   **Name:** `VERMARKTER_PASSWORDS`
     *   **Value:** Ein JSON-Objekt. (z.B. `{"funke":"geheim2"}`)
@@ -62,7 +62,7 @@ Füge nun folgende Variablen hinzu (Wähle immer den Button `Encrypt` aus, damit
     *   **Name:** `ADMIN_PASSWORD`
     *   **Value:** Das Master-Passwort für dich als Admin (damit du alle Vermarkter bearbeiten kannst).
     *   *Klicke auf `Encrypt`!*
-*   **Variable 6: (Optional - Wenn das Projekt in einem Unterordner liegt)**
+*   **Variable 6: (Pfad zum Projekt im Repository)**
     *   **Name:** `GITHUB_BASE_PATH`
     *   **Value:** `tools/identifier-landscape`
     *   *Der Worker hängt diesen Pfad dann automatisch vor jeden Speichervorgang.*
@@ -77,4 +77,10 @@ Füge nun folgende Variablen hinzu (Wähle immer den Button `Encrypt` aus, damit
 1. Gehe in deinem Cloudflare Worker auf den Reiter **Triggers**.
 2. Dort siehst du eine URL unter "Routes", die ähnlich aussieht wie `https://ovk-gatekeeper.<dein-username>.workers.dev`.
 3. Kopiere diese URL! 
-4. Diese URL müssen wir im nächsten Schritt im HTML Editor (`vermarkter_editor.html`) eintragen, damit der Editor weiß, wohin er die Passwörter und den Code senden muss.
+4. Diese URL ist im HTML Editor (`vermarkter_editor.html`) als `WORKER_URL` hinterlegt.
+
+## Schritt 7: Pfad-Synchronisation (Single Source of Truth)
+Der Worker liefert beim Login (`POST /login`) automatisch die autoritativen Pfad-Informationen zurück:
+* Für den Vermarkter: Relativer Pfad (`config/vermarkter/<id>.js`) sowie vollständiger Repository-Pfad inkl. `GITHUB_BASE_PATH`.
+* Für Admins: Vollständige Liste aller aktiven Vermarkter basierend auf den `PWD_*`-Umgebungsvariablen.
+* Der Editor lädt und speichert dadurch garantiert an denselben Pfad, der in Cloudflare hinterlegt ist.

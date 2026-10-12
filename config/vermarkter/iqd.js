@@ -8,7 +8,7 @@ if (!window.OVK_LANDSCAPE_CONFIG.vermarkter) {
 window.OVK_LANDSCAPE_CONFIG.vermarkter.push({
   id: "iqd",
   name: "iq digital media marketing GmbH",
-  description: " ",
+  description: "Digitalvermarkter führender deutscher Leit- und Qualitätsmedien",
   supportedInventoryTypes: [
     {
       type: "desktop",

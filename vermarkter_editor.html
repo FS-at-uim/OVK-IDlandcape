@@ -91,52 +91,32 @@
             <div id="publishStatus" style="margin-top: 10px; font-size: 0.9em; font-weight: bold; display: none;"></div>
         </div>
 
-        <h3>Code Preview (config/vermarkter/<span id="filenamePreview">...</span>.js)</h3>
+        <h3>Code Preview (<span id="filenamePreview">config/vermarkter/...</span>)</h3>
         <pre id="codeVermarkter">// Bitte Vermarkter auswählen</pre>
         <button class="copy-btn" onclick="copyToClipboard('codeVermarkter')">Code manuell kopieren</button>
     </div>
 </div>
 
-<!-- Load Configurations with dynamic cache-busting -->
+<!-- Load Base Configurations with dynamic cache-busting -->
 <script>
-    (async function() {
-        let files = ['config/core.js', 'config/data_partners.js'];
+    async function loadConfigFile(filePath) {
         try {
-            const dirRes = await fetch('config/vermarkter/');
-            if (dirRes.ok) {
-                const dirHtml = await dirRes.text();
-                const matches = dirHtml.match(/href="([^"]+\.js)"/g);
-                if (matches) {
-                    const vermarkterFiles = matches.map(m => 'config/vermarkter/' + m.match(/"([^"]+)"/)[1]);
-                    files = files.concat(vermarkterFiles);
-                }
-            } else {
-                throw new Error("HTTP Status " + dirRes.status);
-            }
+            const res = await fetch(filePath + '?t=' + Date.now());
+            if (!res.ok) throw new Error("HTTP Status " + res.status);
+            const code = await res.text();
+            (new Function(code))();
+            return true;
         } catch(e) {
-            console.warn("Verzeichnis /config/vermarkter/ konnte nicht ausgelesen werden. Verwende Fallback-Liste.", e);
-            files = files.concat([
-                'config/vermarkter/ad_alliance.js',
-                'config/vermarkter/bcn.js',
-                'config/vermarkter/funke.js',
-                'config/vermarkter/iqd.js',
-                'config/vermarkter/media_impact.js',
-                'config/vermarkter/score.js',
-                'config/vermarkter/seven_one_media.js',
-                'config/vermarkter/stroeer.js',
-                'config/vermarkter/uim.js',
-                'config/vermarkter/visoon.js'
-            ]);
+            console.error("Fehler beim Laden von " + filePath, e);
+            return false;
         }
-        
-        for (const f of files) {
-            try {
-                const res = await fetch(f + '?t=' + Date.now());
-                const code = await res.text();
-                (new Function(code))();
-            } catch(e) {
-                console.error("Fehler beim Laden von " + f, e);
-            }
+    }
+
+    (async function() {
+        // Initiale Kern-Konfigurationen laden (IDs, SSPs, DSPs, Data Partners)
+        const baseFiles = ['config/core.js', 'config/data_partners.js'];
+        for (const f of baseFiles) {
+            await loadConfigFile(f);
         }
         
         if (typeof init === 'function') {
@@ -149,6 +129,8 @@
     let CONFIG;
     let currentVermarkter = null;
     let initialCoreState = {}; // To track changes in core.js
+    let activeVermarkterConfig = null; // Vom Cloudflare Worker gelieferte Pfad-Info
+    let cloudflareBasePath = ""; // GITHUB_BASE_PATH aus Cloudflare
     
     // Auth State
     let sessionPassword = "";
@@ -185,14 +167,50 @@
                 const data = await res.json();
                 sessionPassword = pwd;
                 isAdmin = data.isAdmin;
+                cloudflareBasePath = data.basePath || '';
                 
+                btn.textContent = "Lade Konfiguration...";
+                
+                // Option A: Pfad zur Vermarkter Config aus der Cloudflare-Antwort laden
+                if (data.vermarkter && data.vermarkter.relativePath) {
+                    activeVermarkterConfig = data.vermarkter;
+                    await loadConfigFile(data.vermarkter.relativePath);
+                }
+                
+                if (isAdmin && Array.isArray(data.allVermarkter) && data.allVermarkter.length > 0) {
+                    for (const v of data.allVermarkter) {
+                        await loadConfigFile(v.relativePath);
+                    }
+                } else if (isAdmin && (!data.allVermarkter || data.allVermarkter.length === 0)) {
+                    // Fallback für Admin, falls keine Vermarkterliste im Worker hinterlegt ist
+                    const fallbackList = [
+                        'config/vermarkter/ad_alliance.js',
+                        'config/vermarkter/bcn.js',
+                        'config/vermarkter/funke.js',
+                        'config/vermarkter/iqd.js',
+                        'config/vermarkter/media_impact.js',
+                        'config/vermarkter/score.js',
+                        'config/vermarkter/seven_one_media.js',
+                        'config/vermarkter/stroeer.js',
+                        'config/vermarkter/uim.js',
+                        'config/vermarkter/visoon.js'
+                    ];
+                    for (const f of fallbackList) {
+                        await loadConfigFile(f);
+                    }
+                }
+                
+                CONFIG = window.OVK_LANDSCAPE_CONFIG || {};
+                populateSelect();
+
                 document.getElementById('loginOverlay').style.display = 'none';
                 
                 // Wenn es ein regulärer Vermarkter ist
-                if (!isAdmin && urlId) {
+                const targetId = urlId || (data.vermarkter ? data.vermarkter.id : null);
+                if (!isAdmin && targetId) {
                     select.disabled = true;
-                    select.value = urlId;
-                    loadVermarkter(urlId);
+                    select.value = targetId;
+                    loadVermarkter(targetId);
                 } else if (isAdmin && urlId) {
                     // Admin besucht spezifischen Link
                     select.value = urlId;
@@ -215,21 +233,26 @@
         btn.disabled = false;
         btn.textContent = "Anmelden";
     }
+
+    function populateSelect() {
+        select.innerHTML = '<option value="">-- Bitte wählen --</option>';
+        if (CONFIG && Array.isArray(CONFIG.vermarkter)) {
+            CONFIG.vermarkter.forEach(v => {
+                const opt = document.createElement('option');
+                opt.value = v.id;
+                opt.textContent = `${v.name} (${v.id})`;
+                select.appendChild(opt);
+            });
+        }
+    }
     
     function init() {
-        CONFIG = window.OVK_LANDSCAPE_CONFIG;
-        if (!CONFIG || !CONFIG.vermarkter) {
-            alert("Konfiguration konnte nicht geladen werden.");
-            return;
+        CONFIG = window.OVK_LANDSCAPE_CONFIG || {};
+        if (!CONFIG.vermarkter) {
+            CONFIG.vermarkter = [];
         }
 
-        // Populate Select
-        CONFIG.vermarkter.forEach(v => {
-            const opt = document.createElement('option');
-            opt.value = v.id;
-            opt.textContent = `${v.name} (${v.id})`;
-            select.appendChild(opt);
-        });
+        populateSelect();
 
         // Event Listeners
         select.addEventListener('change', (e) => loadVermarkter(e.target.value));
@@ -237,7 +260,7 @@
         // URL Handling for Login Form
         if (urlId) {
             const vMatch = CONFIG.vermarkter.find(v => v.id === urlId);
-            document.getElementById('loginTitle').textContent = vMatch ? vMatch.name : 'OVK Editor';
+            document.getElementById('loginTitle').textContent = vMatch ? vMatch.name : `OVK Editor (${urlId})`;
         } else {
             document.getElementById('loginTitle').textContent = 'OVK Admin Login';
         }
@@ -253,9 +276,18 @@
             return;
         }
 
-        currentVermarkter = JSON.parse(JSON.stringify(CONFIG.vermarkter.find(v => v.id === id)));
-        filenamePreview.textContent = id;
-        document.getElementById('pwdVermarkterName').textContent = currentVermarkter.name;
+        const found = CONFIG.vermarkter ? CONFIG.vermarkter.find(v => v.id === id) : null;
+        currentVermarkter = JSON.parse(JSON.stringify(found || { id }));
+        
+        // Pfad aus Cloudflare-Konfiguration oder Standardformat
+        let targetDisplayPath = `config/vermarkter/${id}.js`;
+        if (activeVermarkterConfig && activeVermarkterConfig.id === id && activeVermarkterConfig.fullPath) {
+            targetDisplayPath = activeVermarkterConfig.fullPath;
+        } else if (cloudflareBasePath) {
+            targetDisplayPath = `${cloudflareBasePath}/config/vermarkter/${id}.js`;
+        }
+        filenamePreview.textContent = targetDisplayPath;
+        document.getElementById('pwdVermarkterName').textContent = currentVermarkter.name || id;
         document.getElementById('publishStatus').style.display = 'none';
         
         document.getElementById('v_id').value = currentVermarkter.id;
@@ -613,7 +645,9 @@ window.OVK_LANDSCAPE_CONFIG.vermarkter.push(${JSON.stringify(vObj, null, 2).repl
             });
 
             if (res.ok) {
-                statusEl.textContent = "Erfolgreich gespeichert! Die Map wird beim nächsten Neuladen aktualisiert.";
+                const resData = await res.json().catch(() => ({}));
+                const savedPathText = resData.savedPath || filenamePreview.textContent;
+                statusEl.textContent = `Erfolgreich in ${savedPathText} gespeichert! Die Map wird beim nächsten Neuladen aktualisiert.`;
                 statusEl.style.color = "#137333";
             } else {
                 const errText = await res.text();

@@ -35,9 +35,63 @@ export default {
         return new Response('Falsches Passwort', { status: 401, headers: corsHeaders });
       }
 
+      // Hilfsfunktion: Pfadauflösung einheitlich für Login-Auskunft und Speichervorgang
+      const rawBasePath = env.GITHUB_BASE_PATH || '';
+      const basePath = rawBasePath.replace(/^\/+/, '').replace(/\/+$/, '');
+
+      const resolvePath = (tgt, id) => {
+        let relPath = '';
+        if (tgt === 'core') {
+          relPath = 'config/core.js';
+        } else if (tgt === 'data_partners') {
+          relPath = 'config/data_partners.js';
+        } else if (tgt === 'vermarkter') {
+          relPath = `config/vermarkter/${id}.js`;
+        }
+        const fullPath = basePath.length > 0 ? `${basePath}/${relPath}` : relPath;
+        return { relativePath: relPath, fullPath };
+      };
+
       // Login Check Route
       if (url.pathname === '/login') {
-        return new Response(JSON.stringify({ success: true, isAdmin }), { 
+        const knownVermarkterIds = new Set();
+        if (env) {
+          for (const key of Object.keys(env)) {
+            if (key.startsWith('PWD_')) {
+              knownVermarkterIds.add(key.replace(/^PWD_/, ''));
+            }
+          }
+        }
+        for (const id of Object.keys(passwords)) {
+          knownVermarkterIds.add(id);
+        }
+
+        let vermarkterInfo = null;
+        if (vermarkterId && vermarkterId !== 'admin') {
+          const paths = resolvePath('vermarkter', vermarkterId);
+          vermarkterInfo = {
+            id: vermarkterId,
+            relativePath: paths.relativePath,
+            fullPath: paths.fullPath
+          };
+        }
+
+        const allVermarkter = Array.from(knownVermarkterIds).map(id => {
+          const paths = resolvePath('vermarkter', id);
+          return {
+            id,
+            relativePath: paths.relativePath,
+            fullPath: paths.fullPath
+          };
+        });
+
+        return new Response(JSON.stringify({ 
+          success: true, 
+          isAdmin,
+          basePath,
+          vermarkter: vermarkterInfo,
+          allVermarkter: isAdmin ? allVermarkter : undefined
+        }), { 
           status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
         });
       }
@@ -47,26 +101,18 @@ export default {
       }
 
       // Zielpfad bestimmen und Rechte prüfen
-      let path = '';
-      if (target === 'core') {
-          if (!isAdmin) return new Response('Nur Admins können core.js bearbeiten', { status: 403, headers: corsHeaders });
-          path = 'config/core.js';
-      } else if (target === 'data_partners') {
-          // Data Partners können die Datei aktualisieren, sofern sie ein gültiges PW haben (isUser oder isAdmin)
-          path = 'config/data_partners.js';
-      } else if (target === 'vermarkter') {
-          if (!vermarkterId) return new Response('Fehlende Vermarkter ID', { status: 400, headers: corsHeaders });
-          path = `config/vermarkter/${vermarkterId}.js`;
-      } else {
-          return new Response('Ungültiges Target', { status: 400, headers: corsHeaders });
+      if (target === 'core' && !isAdmin) {
+        return new Response('Nur Admins können core.js bearbeiten', { status: 403, headers: corsHeaders });
+      }
+      if (target === 'vermarkter' && !vermarkterId) {
+        return new Response('Fehlende Vermarkter ID', { status: 400, headers: corsHeaders });
+      }
+      if (!['core', 'data_partners', 'vermarkter'].includes(target)) {
+        return new Response('Ungültiges Target', { status: 400, headers: corsHeaders });
       }
 
-      // Base Path anwenden (falls das Projekt in einem Unterordner liegt)
-      const rawBasePath = env.GITHUB_BASE_PATH || '';
-      let basePath = rawBasePath.replace(/^\/+/, '').replace(/\/+$/, ''); // Entferne Slashes am Anfang/Ende
-      if (basePath.length > 0) {
-          path = `${basePath}/${path}`;
-      }
+      const paths = resolvePath(target, vermarkterId);
+      const path = paths.fullPath;
 
       // GitHub API Setup für Speicherung
       const owner = env.GITHUB_OWNER;
@@ -94,7 +140,7 @@ export default {
       const targetBranch = env.GITHUB_BRANCH || 'main';
 
       const putBody = {
-        message: `Update Konfiguration für ${target} (via Editor)`,
+        message: `Update Konfiguration für ${target} (${vermarkterId || ''}) via Editor`,
         content: base64Content,
         branch: targetBranch
       };
@@ -114,7 +160,11 @@ export default {
         return new Response(`GitHub API Fehler: ${errorText}`, { status: 502, headers: corsHeaders });
       }
 
-      return new Response(JSON.stringify({ success: true, message: 'Erfolgreich gespeichert!' }), { 
+      return new Response(JSON.stringify({ 
+        success: true, 
+        message: 'Erfolgreich gespeichert!',
+        savedPath: path
+      }), { 
         status: 200, 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
       });
