@@ -4,19 +4,28 @@ Dieses Handbuch beschreibt, wie Administratoren der **OVK ID Landscape Map** neu
 
 ---
 
-## 1. Übersicht der Editoren & Zuständigkeiten
+## 1. Das zentrale Portal & Zuständigkeiten
 
-| Editor | Datei / URL | Zuständigkeit |
+Das zentrale **OVK Config Portal** vereint alle Bearbeitungs- und Verwaltungsfunktionen in einer einzigen, modernen Oberfläche:
+
+| Tool | Datei / URL | Zuständigkeit |
 | :--- | :--- | :--- |
-| **Core Editor** | [`core_editor.html`](file:///c:/Users/fschenk/mein-webserver/Identifier/core_editor.html) | DSPs, SSPs, Data Partner, ID-Systeme, Usecases (`config/core.js` & `config/data_partners.js`) |
-| **Vermarkter Editor** | [`vermarkter_editor.html`](file:///c:/Users/fschenk/mein-webserver/Identifier/vermarkter_editor.html) | Vermarkter-Inventare, ID-Abdeckungen (Coverage %), DSP-Ausschlüsse, SSP-Opt-Ins (`config/vermarkter/<id>.js`) |
-| **Cloudflare Worker** | `docs/gatekeeper_worker.js` | Authentifizierung, Passwörter, Rechteprüfung, Single Source of Truth (GitHub API) |
+| **Unified Config Portal (Neu)** | [`editor.html`](file:///c:/Users/fschenk/mein-webserver/Identifier/editor.html) | **Zentrales Portal:** Vermarkter, SSPs, DSPs, Data Partner, ID-Kataloge und integrierte Benutzerverwaltung (**Partner-Logins**) |
+| **Legacy Core Editor** | [`core_editor.html`](file:///c:/Users/fschenk/mein-webserver/Identifier/core_editor.html) | Bisheriger Editor für `config/core.js` & `config/data_partners.js` |
+| **Legacy Vermarkter Editor** | [`vermarkter_editor.html`](file:///c:/Users/fschenk/mein-webserver/Identifier/vermarkter_editor.html) | Bisheriger Editor für `config/vermarkter/<id>.js` |
+| **Gatekeeper Worker** | `docs/gatekeeper_worker.js` | Authentifizierung, Git-basierte Auth-Registry, Speichern im führenden BVDW-Repository |
 
 ---
 
-## 2. DSPs & SSPs pflegen oder neu anlegen
+## 2. DSPs, SSPs & Vermarkter im neuen Portal pflegen
 
-Öffne [`core_editor.html`](file:///c:/Users/fschenk/mein-webserver/Identifier/core_editor.html) und melde dich mit dem **Admin-Passwort** an.
+Öffne [`editor.html`](file:///c:/Users/fschenk/mein-webserver/Identifier/editor.html) und melde dich mit dem **Admin-Passwort** an. Als Administrator stehen dir alle Tabs zur Verfügung:
+
+1. **🏷️ Vermarkter:** Wähle einen bestehenden Vermarkter aus dem Dropdown oder klicke auf `+ Neu anlegen`. Passe Name, Beschreibung (max 65 Zeichen), Inventartypen, Coverage-Werte, DSP-Ausschlüsse und SSP-Opt-Ins an.
+2. **⚡ SSPs:** Pflege Name, Kategorie (*Standard SSP* vs. *Curation SSP*), unterstützte IDs und Usecases.
+3. **🎯 DSPs:** Pflege Name, Logo-Kürzel, IDs, Usecases und kompatible SSPs.
+4. **📊 Data Partner:** Pflege Datenpartner, unterstützte IDs, DSPs und Curation-SSPs.
+5. **👤 Partner-Logins:** Lege Zugänge für Partner direkt an (siehe Abschnitt 5).
 
 ### A. Neuen DSP / SSP anlegen
 1. Klicke auf den Tab **DSPs** bzw. **SSPs**.

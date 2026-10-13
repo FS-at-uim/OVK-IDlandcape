@@ -1,0 +1,2167 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OVK ID Landscape – Config Portal</title>
+  <!-- Google Fonts: Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --color-ovk-red: #e2401c;
+      --color-ovk-red-hover: #c43212;
+      --color-ovk-blue: #004bb4;
+      --color-ovk-light-blue: #0056cc;
+      --color-bg-light: #f6f8fa;
+      --color-bg-sand: #edeae5;
+      --color-bg-dark: #0b1c34;
+      --color-text-charcoal: #2d3748;
+      --color-text-muted: #718096;
+      --color-border: #e2e8f0;
+      --color-success: #137333;
+      --color-success-bg: #e6f4ea;
+      --color-danger: #c81e1e;
+      --color-danger-bg: #fde8e8;
+      
+      --shadow-sm: 0 1px 3px rgba(0,0,0,0.05), 0 1px 2px rgba(0,0,0,0.02);
+      --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.07), 0 2px 4px -1px rgba(0,0,0,0.04);
+      --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.08), 0 4px 6px -2px rgba(0,0,0,0.03);
+      
+      --font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: var(--font-family);
+      background-color: var(--color-bg-light);
+      color: var(--color-text-charcoal);
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Top Navigation Header */
+    .portal-header {
+      background-color: var(--color-ovk-red);
+      color: #ffffff;
+      height: 64px;
+      display: flex;
+      align-items: center;
+      padding: 0 2rem;
+      box-shadow: var(--shadow-md);
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+    }
+    .header-inner {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      width: 100%;
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+    .logo-badge {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 1.15rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+    }
+    .portal-pill {
+      background: rgba(255, 255, 255, 0.2);
+      padding: 3px 10px;
+      border-radius: 12px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .user-tag {
+      background: rgba(0, 0, 0, 0.2);
+      padding: 5px 12px;
+      border-radius: 20px;
+      font-size: 0.85rem;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .nav-btn {
+      background: rgba(255, 255, 255, 0.15);
+      color: #ffffff;
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      padding: 6px 14px;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: none;
+      transition: background 0.15s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .nav-btn:hover { background: rgba(255, 255, 255, 0.28); color: #ffffff; }
+
+    /* Admin Tab Navigation */
+    .admin-tabs-bar {
+      background: #ffffff;
+      border-bottom: 1px solid var(--color-border);
+      padding: 0 2rem;
+      display: none;
+    }
+    .admin-tabs-container {
+      max-width: 1400px;
+      margin: 0 auto;
+      display: flex;
+      gap: 6px;
+      overflow-x: auto;
+    }
+    .tab-item {
+      padding: 14px 18px;
+      font-size: 0.92rem;
+      font-weight: 600;
+      color: var(--color-text-muted);
+      cursor: pointer;
+      border-bottom: 3px solid transparent;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      white-space: nowrap;
+      transition: all 0.15s ease;
+    }
+    .tab-item:hover { color: var(--color-ovk-blue); }
+    .tab-item.active {
+      color: var(--color-ovk-blue);
+      border-bottom-color: var(--color-ovk-blue);
+    }
+    .tab-badge {
+      font-size: 0.72rem;
+      padding: 2px 7px;
+      border-radius: 10px;
+      background: #edf2f7;
+      color: var(--color-text-charcoal);
+    }
+    .tab-item.active .tab-badge {
+      background: #ebf8ff;
+      color: var(--color-ovk-blue);
+    }
+
+    /* Main Container */
+    .main-wrap {
+      max-width: 1400px;
+      width: 100%;
+      margin: 20px auto;
+      padding: 0 20px;
+      flex: 1;
+    }
+
+    /* Prominent Nightly Build Notice */
+    .nightly-banner {
+      background: #fff;
+      border-left: 4px solid var(--color-ovk-blue);
+      border-radius: 8px;
+      padding: 14px 18px;
+      margin-bottom: 24px;
+      box-shadow: var(--shadow-sm);
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      font-size: 0.92rem;
+    }
+    .nightly-icon {
+      font-size: 1.5rem;
+      flex-shrink: 0;
+    }
+    .nightly-text strong {
+      color: var(--color-ovk-blue);
+    }
+
+    /* Content Cards */
+    .card {
+      background: #ffffff;
+      border: 1px solid var(--color-border);
+      border-radius: 8px;
+      box-shadow: var(--shadow-sm);
+      padding: 24px;
+      margin-bottom: 24px;
+    }
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--color-border);
+      padding-bottom: 14px;
+      margin-bottom: 20px;
+    }
+    .card-title {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: var(--color-text-charcoal);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .stage-pill {
+      font-size: 0.75rem;
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-weight: 700;
+      color: #fff;
+      background: var(--color-ovk-blue);
+    }
+
+    /* Forms & Inputs */
+    .form-group {
+      margin-bottom: 18px;
+    }
+    label {
+      display: block;
+      font-size: 0.88rem;
+      font-weight: 600;
+      margin-bottom: 6px;
+      color: #374151;
+    }
+    .field-hint {
+      font-size: 0.8rem;
+      color: var(--color-text-muted);
+      margin-top: 4px;
+    }
+    input[type="text"], input[type="password"], input[type="number"], select, textarea {
+      width: 100%;
+      padding: 10px 14px;
+      border: 1px solid var(--color-border);
+      border-radius: 6px;
+      font-family: var(--font-family);
+      font-size: 0.95rem;
+      color: var(--color-text-charcoal);
+      background: #fafafa;
+      transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    }
+    input:focus, select:focus, textarea:focus {
+      outline: none;
+      border-color: var(--color-ovk-blue);
+      box-shadow: 0 0 0 3px rgba(0, 75, 180, 0.12);
+      background: #ffffff;
+    }
+    input:disabled, textarea:disabled {
+      background: #edf2f7;
+      color: #a0aec0;
+      cursor: not-allowed;
+    }
+
+    /* Grid Layouts */
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+    @media (max-width: 900px) {
+      .grid-2 { grid-template-columns: 1fr; }
+    }
+
+    /* Buttons */
+    .btn {
+      padding: 10px 20px;
+      border-radius: 6px;
+      font-weight: 600;
+      font-size: 0.92rem;
+      border: none;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: background 0.15s ease, transform 0.05s ease;
+    }
+    .btn:active { transform: translateY(1px); }
+    .btn-primary {
+      background: var(--color-ovk-blue);
+      color: #ffffff;
+    }
+    .btn-primary:hover { background: var(--color-ovk-light-blue); }
+    .btn-success {
+      background: var(--color-success);
+      color: #ffffff;
+    }
+    .btn-success:hover { background: #0f5c28; }
+    .btn-danger {
+      background: var(--color-danger);
+      color: #ffffff;
+    }
+    .btn-danger:hover { background: #a01818; }
+    .btn-secondary {
+      background: #e2e8f0;
+      color: #2d3748;
+    }
+    .btn-secondary:hover { background: #cbd5e0; }
+
+    /* Action Footer Bar for saving */
+    .action-bar {
+      background: #ffffff;
+      border: 1px solid var(--color-border);
+      border-radius: 8px;
+      padding: 18px 24px;
+      margin-top: 24px;
+      box-shadow: var(--shadow-sm);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 20px;
+      flex-wrap: wrap;
+    }
+    .status-msg {
+      padding: 10px 16px;
+      border-radius: 6px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      display: none;
+    }
+    .status-msg.success {
+      background: var(--color-success-bg);
+      color: var(--color-success);
+      border: 1px solid #b7eb8f;
+      display: inline-block;
+    }
+    .status-msg.error {
+      background: var(--color-danger-bg);
+      color: var(--color-danger);
+      border: 1px solid #ffa39e;
+      display: inline-block;
+    }
+
+    /* Nested Inventory Blocks (Vermarkter) */
+    .inventory-block {
+      background: #f8fafc;
+      border: 1px solid var(--color-border);
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 14px;
+    }
+    .nested-id-item {
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-radius: 6px;
+      padding: 10px 14px;
+      margin-top: 8px;
+    }
+    .dsp-exclusion-box {
+      background: #f1f5f9;
+      border: 1px dashed #cbd5e0;
+      border-radius: 6px;
+      padding: 12px;
+      margin-top: 10px;
+      display: none;
+    }
+
+    /* Checkbox & Radio styling */
+    .checkbox-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 10px;
+      margin-top: 8px;
+    }
+    .checkbox-item {
+      background: #f8fafc;
+      border: 1px solid var(--color-border);
+      border-radius: 6px;
+      padding: 8px 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+      font-size: 0.88rem;
+      transition: border-color 0.15s ease;
+    }
+    .checkbox-item:hover { border-color: var(--color-ovk-blue); }
+    .checkbox-item input { margin-top: 0; width: 16px; height: 16px; }
+
+    /* Tables (User Management) */
+    .data-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 12px;
+    }
+    .data-table th, .data-table td {
+      padding: 12px 14px;
+      text-align: left;
+      border-bottom: 1px solid var(--color-border);
+      font-size: 0.9rem;
+    }
+    .data-table th {
+      background: #f8fafc;
+      font-weight: 700;
+      color: #4a5568;
+    }
+    .data-table tr:hover td { background: #fafafa; }
+    .role-badge {
+      display: inline-block;
+      padding: 3px 8px;
+      border-radius: 12px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+    .role-vermarkter { background: #e6f4ea; color: #137333; }
+    .role-ssp { background: #ebf8ff; color: #004bb4; }
+    .role-dsp { background: #fef3c7; color: #b45309; }
+    .role-data_partner { background: #ede9fe; color: #6d28d9; }
+
+    /* Login Overlay */
+    #loginOverlay {
+      position: fixed;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background: linear-gradient(135deg, #0b1c34 0%, #1e293b 100%);
+      z-index: 9999;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .login-box {
+      background: #ffffff;
+      border-radius: 12px;
+      box-shadow: var(--shadow-lg);
+      width: 100%;
+      max-width: 440px;
+      padding: 40px;
+      text-align: center;
+    }
+    .login-logo {
+      font-size: 1.4rem;
+      font-weight: 800;
+      color: var(--color-ovk-red);
+      margin-bottom: 4px;
+    }
+
+    /* Modal Help */
+    #helpModal {
+      position: fixed;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0, 0, 0, 0.6);
+      backdrop-filter: blur(2px);
+      z-index: 10001;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .help-modal-box {
+      background: #ffffff;
+      border-radius: 10px;
+      max-width: 840px;
+      width: 100%;
+      max-height: 88vh;
+      overflow-y: auto;
+      padding: 32px;
+      position: relative;
+      box-shadow: var(--shadow-lg);
+    }
+    .modal-close {
+      position: absolute;
+      top: 18px; right: 20px;
+      background: none; border: none;
+      font-size: 1.6rem; color: #a0aec0;
+      cursor: pointer;
+    }
+    .modal-close:hover { color: #2d3748; }
+
+    /* Expert Mode (Admin Code View Accordion) */
+    .expert-accordion {
+      margin-top: 20px;
+      border: 1px solid var(--color-border);
+      border-radius: 6px;
+      background: #ffffff;
+    }
+    .expert-toggle {
+      padding: 12px 18px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--color-text-muted);
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      user-select: none;
+    }
+    .expert-content {
+      display: none;
+      padding: 16px;
+      border-top: 1px solid var(--color-border);
+      background: #1e1e1e;
+      color: #d4d4d4;
+      border-bottom-left-radius: 6px;
+      border-bottom-right-radius: 6px;
+      font-family: monospace;
+      font-size: 0.85rem;
+      white-space: pre-wrap;
+      max-height: 300px;
+      overflow-y: auto;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Fullscreen Login Overlay -->
+  <div id="loginOverlay">
+    <div class="login-box">
+      <div class="login-logo">OVK ID Landscape</div>
+      <h2 id="loginTitle" style="font-size: 1.15rem; color: #2d3748; margin-bottom: 8px;">Config Portal Login</h2>
+      <p id="loginSubtitle" style="color: var(--color-text-muted); font-size: 0.88rem; margin-bottom: 24px;">
+        Bitte gib dein Passwort ein, um deine Konfiguration zu laden.
+      </p>
+
+      <div class="form-group" style="text-align: left;">
+        <label for="loginPassword">Passwort</label>
+        <input type="password" id="loginPassword" placeholder="Dein Partner- oder Admin-Passwort" onkeydown="if(event.key==='Enter') performLogin()">
+      </div>
+
+      <button type="button" class="btn btn-primary" id="loginBtn" style="width: 100%; padding: 12px;" onclick="performLogin()">
+        Anmelden & Daten laden
+      </button>
+
+      <div id="loginError" style="color: var(--color-danger); margin-top: 14px; font-size: 0.9rem; font-weight: 600; display: none;">
+        Falsches Passwort oder Benutzer nicht gefunden.
+      </div>
+    </div>
+  </div>
+
+  <!-- Top Portal Header -->
+  <header class="portal-header">
+    <div class="header-inner">
+      <div class="logo-badge">
+        <span>OVK ID Landscape</span>
+        <span class="portal-pill">Config Portal</span>
+      </div>
+
+      <div class="header-actions">
+        <div class="user-tag" id="userTagDisplay">
+          <span>👤</span>
+          <span id="userNameDisplay">Nicht angemeldet</span>
+          <span id="userRoleBadge" class="role-badge" style="display:none;"></span>
+        </div>
+        <button type="button" class="nav-btn" onclick="openHelpModal()">📖 Anleitung / Hilfe</button>
+        <a href="index.html" target="_blank" class="nav-btn">🗺️ Zur Live-Map</a>
+        <button type="button" class="nav-btn" onclick="logout()" style="background: rgba(0,0,0,0.3);">Abmelden</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Admin Tab Bar (Nur für Admin sichtbar) -->
+  <nav class="admin-tabs-bar" id="adminTabsBar">
+    <div class="admin-tabs-container">
+      <div class="tab-item active" onclick="switchAdminTab('vermarkter')">
+        <span>🏷️ Vermarkter</span>
+        <span class="tab-badge" id="badgeVermarkter">0</span>
+      </div>
+      <div class="tab-item" onclick="switchAdminTab('ssps')">
+        <span>⚡ SSPs</span>
+        <span class="tab-badge" id="badgeSSPs">0</span>
+      </div>
+      <div class="tab-item" onclick="switchAdminTab('dsps')">
+        <span>🎯 DSPs</span>
+        <span class="tab-badge" id="badgeDSPs">0</span>
+      </div>
+      <div class="tab-item" onclick="switchAdminTab('dataPartners')">
+        <span>📊 Data Partner</span>
+        <span class="tab-badge" id="badgeDataPartners">0</span>
+      </div>
+      <div class="tab-item" onclick="switchAdminTab('coreCatalogs')">
+        <span>🆔 IDs & Usecases</span>
+      </div>
+      <div class="tab-item" onclick="switchAdminTab('authRegistry')">
+        <span>👤 Partner-Logins</span>
+        <span class="tab-badge" style="background: #e6f4ea; color: #137333;" id="badgeAuthUsers">Neu</span>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Main Content Area -->
+  <main class="main-wrap">
+
+    <!-- Prominenter Hinweis auf nächtliche Veröffentlichung -->
+    <div class="nightly-banner">
+      <span class="nightly-icon">🌙</span>
+      <div class="nightly-text">
+        <strong>Hinweis zur Live-Schaltung:</strong> Gespeicherte Daten werden direkt im zentralen <code>BVDW-org</code> Repository archiviert. In der öffentlichen <strong>OVK ID Landscape Map</strong> greifen die Daten automatisch <strong>über Nacht</strong> mit dem nächsten nächtlichen Aktualisierungs- und Cache-Zyklus.
+      </div>
+    </div>
+
+    <!-- 1. BEREICH: VERMARKTER ANSICHT -->
+    <section id="sectionVermarkter" style="display: none;">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">
+            <span class="stage-pill">Stage 4</span>
+            <span id="vermarkterSectionTitle">Vermarkter Konfiguration</span>
+          </div>
+          <!-- Admin-Dropdown zum Wechseln von Vermarktern -->
+          <div id="adminVermarkterSelectBox" style="display: none; align-items: center; gap: 10px;">
+            <label for="vermarkterSelect" style="margin-bottom:0;">Vermarkter wechseln:</label>
+            <select id="vermarkterSelect" style="width: auto; min-width: 220px;" onchange="loadVermarkter(this.value)">
+              <option value="">-- Vermarkter wählen --</option>
+            </select>
+            <button type="button" class="btn btn-secondary" onclick="createNewVermarkter()">+ Neu anlegen</button>
+          </div>
+        </div>
+
+        <div id="vermarkterFormContent">
+          <div class="grid-2">
+            <div class="form-group">
+              <label for="v_id">Technische ID (nicht änderbar)</label>
+              <input type="text" id="v_id" disabled>
+            </div>
+            <div class="form-group">
+              <label for="v_name">Offizieller Name</label>
+              <input type="text" id="v_name" placeholder="z. B. United Internet Media">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <div style="display: flex; justify-content: space-between;">
+              <label for="v_description">Beschreibung (Kurztext)</label>
+              <span id="v_desc_counter" style="font-size: 0.8rem; color: var(--color-text-muted);">0/65</span>
+            </div>
+            <textarea id="v_description" rows="2" maxlength="65" oninput="updateDescCounter()" placeholder="Kurzbeschreibung (maximal 65 Zeichen)"></textarea>
+            <div class="field-hint">Maximal 65 Zeichen für ein einheitliches Layout in der Landscape Map.</div>
+          </div>
+
+          <div style="margin-top: 24px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+              <h3 style="font-size: 1.05rem;">Unterstützte Inventartypen & Coverage</h3>
+              <button type="button" class="btn btn-secondary" style="font-size: 0.82rem; padding: 6px 12px;" onclick="addInventoryBlock()">+ Inventartyp hinzufügen</button>
+            </div>
+            <div id="v_inventory_list"></div>
+          </div>
+
+          <div style="margin-top: 24px;">
+            <h3 style="font-size: 1.05rem; margin-bottom: 8px;">SSP Opt-Ins</h3>
+            <p class="field-hint" style="margin-bottom: 12px;">Wähle aus, welche Supply-Side-Plattformen für diesen Vermarkter aktiv freigeschaltet sind.</p>
+            <div class="checkbox-grid" id="v_ssp_opt_in_list"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Speichern-Leiste für Vermarkter -->
+      <div class="action-bar">
+        <div>
+          <button type="button" class="btn btn-success" id="saveVermarkterBtn" onclick="saveActiveVermarkter()">
+            💾 Änderungen für diesen Vermarkter speichern
+          </button>
+        </div>
+        <div id="vermarkterStatusMsg" class="status-msg"></div>
+      </div>
+    </section>
+
+    <!-- 2. BEREICH: SSP ANSICHT (Admin oder Partner-SSP) -->
+    <section id="sectionSSP" style="display: none;">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">
+            <span class="stage-pill">Stage 3</span>
+            <span id="sspSectionTitle">Supply-Side-Plattform (SSP)</span>
+          </div>
+          <div id="adminSspSelectBox" style="display: none; align-items: center; gap: 10px;">
+            <label for="sspSelect" style="margin-bottom:0;">SSP wählen:</label>
+            <select id="sspSelect" style="width: auto; min-width: 220px;" onchange="loadSSP(this.value)"></select>
+            <button type="button" class="btn btn-secondary" onclick="createNewSSP()">+ Neu anlegen</button>
+          </div>
+        </div>
+
+        <div id="sspFormContent">
+          <div class="grid-2">
+            <div class="form-group">
+              <label for="ssp_id">SSP ID</label>
+              <input type="text" id="ssp_id" disabled>
+            </div>
+            <div class="form-group">
+              <label for="ssp_name">SSP Name</label>
+              <input type="text" id="ssp_name" placeholder="z. B. Magnite">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>Kategorie</label>
+            <select id="ssp_category">
+              <option value="standard">Standard SSP (ID Weiterleitung)</option>
+              <option value="curation">Curation SSP (Targeting / Deal IDs / FC)</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>Unterstützte ID-Systeme</label>
+            <div class="checkbox-grid" id="ssp_ids_list"></div>
+          </div>
+
+          <div class="form-group">
+            <label>Unterstützte Usecases</label>
+            <div class="checkbox-grid" id="ssp_usecases_list"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="action-bar">
+        <div>
+          <button type="button" class="btn btn-success" id="saveSspBtn" onclick="saveActiveSSP()">
+            💾 SSP-Konfiguration speichern
+          </button>
+          <button type="button" class="btn btn-danger" id="deleteSspBtn" style="margin-left: 10px; display: none;" onclick="deleteActiveSSP()">
+            🗑️ Löschen
+          </button>
+        </div>
+        <div id="sspStatusMsg" class="status-msg"></div>
+      </div>
+    </section>
+
+    <!-- 3. BEREICH: DSP ANSICHT (Admin oder Partner-DSP) -->
+    <section id="sectionDSP" style="display: none;">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">
+            <span class="stage-pill">Stage 2</span>
+            <span id="dspSectionTitle">Demand-Side-Plattform (DSP)</span>
+          </div>
+          <div id="adminDspSelectBox" style="display: none; align-items: center; gap: 10px;">
+            <label for="dspSelect" style="margin-bottom:0;">DSP wählen:</label>
+            <select id="dspSelect" style="width: auto; min-width: 220px;" onchange="loadDSP(this.value)"></select>
+            <button type="button" class="btn btn-secondary" onclick="createNewDSP()">+ Neu anlegen</button>
+          </div>
+        </div>
+
+        <div id="dspFormContent">
+          <div class="grid-2">
+            <div class="form-group">
+              <label for="dsp_id">DSP ID</label>
+              <input type="text" id="dsp_id" disabled>
+            </div>
+            <div class="form-group">
+              <label for="dsp_name">DSP Name</label>
+              <input type="text" id="dsp_name" placeholder="z. B. The Trade Desk">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="dsp_logo">Logo-Kürzel</label>
+            <input type="text" id="dsp_logo" placeholder="z. B. TTD" style="max-width: 200px;">
+          </div>
+
+          <div class="form-group">
+            <label>Unterstützte ID-Systeme</label>
+            <div class="checkbox-grid" id="dsp_ids_list"></div>
+          </div>
+
+          <div class="form-group">
+            <label>Unterstützte Usecases</label>
+            <div class="checkbox-grid" id="dsp_usecases_list"></div>
+          </div>
+
+          <div class="form-group">
+            <label>Kompatible SSPs</label>
+            <div class="checkbox-grid" id="dsp_ssps_list"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="action-bar">
+        <div>
+          <button type="button" class="btn btn-success" id="saveDspBtn" onclick="saveActiveDSP()">
+            💾 DSP-Konfiguration speichern
+          </button>
+          <button type="button" class="btn btn-danger" id="deleteDspBtn" style="margin-left: 10px; display: none;" onclick="deleteActiveDSP()">
+            🗑️ Löschen
+          </button>
+        </div>
+        <div id="dspStatusMsg" class="status-msg"></div>
+      </div>
+    </section>
+
+    <!-- 4. BEREICH: DATA PARTNER ANSICHT (Admin oder Partner) -->
+    <section id="sectionDataPartner" style="display: none;">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">
+            <span class="stage-pill">Stage 1a</span>
+            <span id="dpSectionTitle">Data Partner Konfiguration</span>
+          </div>
+          <div id="adminDpSelectBox" style="display: none; align-items: center; gap: 10px;">
+            <label for="dpSelect" style="margin-bottom:0;">Data Partner wählen:</label>
+            <select id="dpSelect" style="width: auto; min-width: 220px;" onchange="loadDataPartner(this.value)"></select>
+            <button type="button" class="btn btn-secondary" onclick="createNewDataPartner()">+ Neu anlegen</button>
+          </div>
+        </div>
+
+        <div id="dpFormContent">
+          <div class="grid-2">
+            <div class="form-group">
+              <label for="dp_id">Data Partner ID</label>
+              <input type="text" id="dp_id" disabled>
+            </div>
+            <div class="form-group">
+              <label for="dp_name">Name</label>
+              <input type="text" id="dp_name" placeholder="z. B. United Internet Media (Data)">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="dp_description">Beschreibung</label>
+            <textarea id="dp_description" rows="2" placeholder="Kurzbeschreibung der Datensegmente"></textarea>
+          </div>
+
+          <div class="form-group">
+            <label>Unterstützte ID-Systeme</label>
+            <div class="checkbox-grid" id="dp_ids_list"></div>
+          </div>
+
+          <div class="form-group">
+            <label>Unterstützte DSPs</label>
+            <div class="checkbox-grid" id="dp_dsps_list"></div>
+          </div>
+
+          <div class="form-group">
+            <label>Unterstützte SSPs (Curation)</label>
+            <div class="checkbox-grid" id="dp_ssps_list"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="action-bar">
+        <div>
+          <button type="button" class="btn btn-success" id="saveDpBtn" onclick="saveActiveDataPartner()">
+            💾 Data-Partner-Konfiguration speichern
+          </button>
+          <button type="button" class="btn btn-danger" id="deleteDpBtn" style="margin-left: 10px; display: none;" onclick="deleteActiveDataPartner()">
+            🗑️ Löschen
+          </button>
+        </div>
+        <div id="dpStatusMsg" class="status-msg"></div>
+      </div>
+    </section>
+
+    <!-- 5. BEREICH: CORE KATALOGE (IDs & USECASES - nur Admin) -->
+    <section id="sectionCoreCatalogs" style="display: none;">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">
+            <span class="stage-pill">Core</span>
+            <span>ID-Systeme & Usecase-Definitionen</span>
+          </div>
+        </div>
+
+        <div>
+          <h3 style="font-size: 1.1rem; margin-bottom: 12px;">ID-Systeme (`ids`)</h3>
+          <div id="coreIdsList" style="margin-bottom: 24px;"></div>
+
+          <h3 style="font-size: 1.1rem; margin-bottom: 12px;">Usecases (`usecases`)</h3>
+          <div id="coreUsecasesList"></div>
+        </div>
+      </div>
+
+      <div class="action-bar">
+        <div>
+          <button type="button" class="btn btn-success" onclick="saveCoreCatalogs()">
+            💾 Gesamte Core-Konfiguration speichern
+          </button>
+        </div>
+        <div id="coreStatusMsg" class="status-msg"></div>
+      </div>
+    </section>
+
+    <!-- 6. BEREICH: PARTNER-LOGINS & PASSWÖRTER (Nur Admin) -->
+    <section id="sectionAuthRegistry" style="display: none;">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">
+            <span class="stage-pill" style="background: var(--color-success);">Auth</span>
+            <span>Partner-Benutzerverwaltung (Ohne Cloudflare!)</span>
+          </div>
+          <span style="font-size: 0.85rem; color: var(--color-text-muted);">
+            Gespeichert in <code>config/auth_registry.json</code> mit SHA-256 + Salt
+          </span>
+        </div>
+
+        <!-- Formular zum Anlegen / Ändern -->
+        <div style="background: #f8fafc; border: 1px solid var(--color-border); border-radius: 8px; padding: 20px; margin-bottom: 24px;">
+          <h3 style="font-size: 1.05rem; margin-bottom: 14px;" id="authFormTitle">Neuen Partner-Login anlegen</h3>
+
+          <div class="grid-2">
+            <div class="form-group">
+              <label for="auth_partner_id">Partner ID (technisches Kürzel)</label>
+              <input type="text" id="auth_partner_id" placeholder="z. B. magnite, uim, active_agent">
+              <div class="field-hint">Muss mit der ID des jeweiligen Eintrags übereinstimmen.</div>
+            </div>
+
+            <div class="form-group">
+              <label for="auth_role">Rolle / Partnertyp</label>
+              <select id="auth_role">
+                <option value="vermarkter">Vermarkter</option>
+                <option value="ssp">Supply-Side-Plattform (SSP)</option>
+                <option value="dsp">Demand-Side-Plattform (DSP)</option>
+                <option value="data_partner">Data Partner</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="grid-2">
+            <div class="form-group">
+              <label for="auth_name">Anzeigename / Firma</label>
+              <input type="text" id="auth_name" placeholder="z. B. Magnite Inc.">
+            </div>
+
+            <div class="form-group">
+              <label for="auth_password">Passwort</label>
+              <div style="display: flex; gap: 8px;">
+                <input type="text" id="auth_password" placeholder="Sicheres Passwort vergeben">
+                <button type="button" class="btn btn-secondary" style="white-space: nowrap;" onclick="generateRandomPassword()">🎲 Generieren</button>
+              </div>
+            </div>
+          </div>
+
+          <div style="display: flex; gap: 10px; margin-top: 10px;">
+            <button type="button" class="btn btn-primary" onclick="submitPartnerAuth()">
+              💾 Partner-Login speichern
+            </button>
+            <button type="button" class="btn btn-secondary" onclick="resetAuthForm()">
+              Zurücksetzen
+            </button>
+          </div>
+        </div>
+
+        <!-- Tabelle der existierenden Accounts -->
+        <h3 style="font-size: 1.05rem; margin-bottom: 10px;">Aktive Partner-Accounts</h3>
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Partner ID</th>
+              <th>Name</th>
+              <th>Rolle</th>
+              <th>Zuletzt geändert</th>
+              <th style="text-align: right;">Aktionen</th>
+            </tr>
+          </thead>
+          <tbody id="authTableBody">
+            <tr><td colspan="5" style="text-align: center; color: var(--color-text-muted);">Keine Partner-Accounts geladen.</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="action-bar" style="display: none;" id="authActionBar">
+        <div id="authStatusMsg" class="status-msg"></div>
+      </div>
+    </section>
+
+    <!-- Experten-Modus (Code-Ansicht für Admin) -->
+    <div class="expert-accordion" id="adminExpertAccordion" style="display: none;">
+      <div class="expert-toggle" onclick="toggleExpertContent()">
+        <span>🛠️ Quellcode-Vorschau (Expertenansicht)</span>
+        <span id="expertToggleArrow">▼</span>
+      </div>
+      <pre class="expert-content" id="expertCodePreview">// Kein Code generiert</pre>
+    </div>
+
+  </main>
+
+  <!-- In-App Hilfe-Modal -->
+  <div id="helpModal" onclick="if(event.target===this) closeHelpModal()">
+    <div class="help-modal-box">
+      <button type="button" class="modal-close" onclick="closeHelpModal()">&times;</button>
+      <h2 style="color: var(--color-ovk-red); margin-bottom: 8px;">📖 OVK Config Portal – Anleitung</h2>
+      <p style="color: var(--color-text-muted); font-size: 0.95rem; margin-bottom: 20px;">
+        Leitfaden zur eigenständigen Datenpflege für Vermarkter, Plattformen und Administratoren.
+      </p>
+
+      <div style="background: var(--color-bg-light); border-left: 4px solid var(--color-ovk-blue); padding: 12px 16px; border-radius: 4px; margin-bottom: 20px; font-size: 0.92rem;">
+        <strong>🌙 Veröffentlichungszyklus:</strong> Alle Änderungen werden sofort im zentralen BVDW-Repository gesichert. In der öffentlich erreichbaren Landscape Map greifen sie automatisch über Nacht.
+      </div>
+
+      <h3 style="color: var(--color-ovk-blue); margin-top: 18px; margin-bottom: 8px;">1. Vermarkter</h3>
+      <ul style="padding-left: 20px; font-size: 0.92rem; line-height: 1.6;">
+        <li><strong>Beschreibung:</strong> Darf maximal 65 Zeichen umfassen.</li>
+        <li><strong>Inventartypen:</strong> Wähle <code>Desktop</code>, <code>Mobile Web</code>, <code>In-App</code> oder <code>CTV</code>.</li>
+        <li><strong>Coverage %:</strong> Angabe in Prozent (0 bis 100), zu wie viel Prozent eine ID auf diesem Inventar vorliegt.</li>
+        <li><strong>DSP-Ausschlüsse:</strong> Klicke auf <em>"DSPs ausschließen"</em>, um einzelne DSPs von einer ID auszunehmen.</li>
+        <li><strong>SSP Opt-In:</strong> Hake alle SSPs an, die für dein Inventar aktiv sein sollen.</li>
+      </ul>
+
+      <h3 style="color: var(--color-ovk-blue); margin-top: 18px; margin-bottom: 8px;">2. SSPs & DSPs</h3>
+      <ul style="padding-left: 20px; font-size: 0.92rem; line-height: 1.6;">
+        <li><strong>SSPs:</strong> Pflege unterstützte IDs, Usecases und die Kategorie (<em>Curation SSP</em> vs. <em>Standard SSP</em>).</li>
+        <li><strong>DSPs:</strong> Pflege unterstützte IDs, Usecases und die kompatiblen SSP-Anbindungen.</li>
+      </ul>
+
+      <h3 style="color: var(--color-ovk-blue); margin-top: 18px; margin-bottom: 8px;">3. Partner-Logins anlegen (Nur für Admins)</h3>
+      <p style="font-size: 0.92rem; line-height: 1.6;">
+        Über den Tab <strong>„👤 Partner-Logins“</strong> können Administratoren neue Zugänge anlegen oder Passwörter neu vergeben. Es ist kein Login in Cloudflare erforderlich.
+      </p>
+
+      <div style="text-align: right; margin-top: 24px;">
+        <button type="button" class="btn btn-primary" onclick="closeHelpModal()">Verstanden & Schließen</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Client-Logik -->
+  <script>
+    const WORKER_URL = "https://ovk-ladscape.friedrich-schenk.workers.dev";
+    
+    // Anwendungsstatus
+    let sessionPassword = "";
+    let currentUser = null;
+    let isAdmin = false;
+    let activeAdminTab = 'vermarkter';
+    
+    // Globale Daten
+    let CONFIG = { ids: [], usecases: [], dsps: [], ssps: [], dataPartners: [], vermarkter: [] };
+    let authPartnersList = [];
+    let activeVermarkterId = null;
+    let activeSSPId = null;
+    let activeDSPId = null;
+    let activeDPId = null;
+
+    // URL-Parameter für Direkt-Logins
+    const urlParams = new URLSearchParams(window.location.search);
+    const urlId = urlParams.get('id');
+
+    if (urlId) {
+      document.getElementById('loginTitle').textContent = `Login für Partner "${urlId}"`;
+      document.getElementById('loginSubtitle').textContent = `Bitte gib dein Passwort für ${urlId} ein.`;
+    }
+
+    // Modal Funktionen
+    function openHelpModal() { document.getElementById('helpModal').style.display = 'flex'; }
+    function closeHelpModal() { document.getElementById('helpModal').style.display = 'none'; }
+
+    // Ausführung geladener JS-Dateien im isolierten Scope
+    function executeConfigCode(code, label) {
+      try {
+        (new Function(code))();
+        return true;
+      } catch(e) {
+        console.error("Fehler beim Ausführen von " + label, e);
+        return false;
+      }
+    }
+
+    // -----------------------------------------------------------------
+    // LOGIN & INITIALISIERUNG
+    // -----------------------------------------------------------------
+    async function performLogin() {
+      const pwd = document.getElementById('loginPassword').value.trim();
+      const btn = document.getElementById('loginBtn');
+      const err = document.getElementById('loginError');
+
+      if (!pwd) return;
+
+      btn.disabled = true;
+      btn.textContent = "Authentifiziere & lade führende Daten...";
+      err.style.display = 'none';
+
+      try {
+        const res = await fetch(WORKER_URL + "/login", {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            vermarkterId: urlId || 'admin',
+            partnerId: urlId || undefined,
+            password: pwd,
+            loadAllVermarkter: true
+          })
+        });
+
+        if (!res.ok) {
+          const errData = await res.json().catch(() => ({}));
+          err.style.display = 'block';
+          err.textContent = errData.error || "Falsches Passwort oder Benutzer nicht autorisiert.";
+          btn.disabled = false;
+          btn.textContent = "Anmelden & Daten laden";
+          return;
+        }
+
+        const data = await res.json();
+        sessionPassword = pwd;
+        isAdmin = data.isAdmin;
+        currentUser = {
+          role: data.role,
+          id: data.partnerId,
+          name: data.partnerName || data.partnerId || 'Benutzer'
+        };
+
+        // Setze globale Konfiguration zurück
+        window.OVK_LANDSCAPE_CONFIG = { vermarkter: [] };
+
+        // 1. Core Config ausführen
+        if (data.configs && data.configs.core && data.configs.core.code) {
+          executeConfigCode(data.configs.core.code, 'config/core.js');
+        }
+
+        // 2. Data Partners ausführen
+        if (data.configs && data.configs.dataPartners && data.configs.dataPartners.code) {
+          executeConfigCode(data.configs.dataPartners.code, 'config/data_partners.js');
+        }
+
+        // 3. Vermarkter ausführen
+        if (data.configs && Array.isArray(data.configs.vermarkter)) {
+          for (const vFile of data.configs.vermarkter) {
+            if (vFile && vFile.code) {
+              executeConfigCode(vFile.code, vFile.fullPath || vFile.relativePath);
+            }
+          }
+        }
+
+        CONFIG = window.OVK_LANDSCAPE_CONFIG || {};
+        if (!CONFIG.vermarkter) CONFIG.vermarkter = [];
+        if (!CONFIG.ssps) CONFIG.ssps = [];
+        if (!CONFIG.dsps) CONFIG.dsps = [];
+        if (!CONFIG.dataPartners) CONFIG.dataPartners = [];
+        if (!CONFIG.ids) CONFIG.ids = [];
+        if (!CONFIG.usecases) CONFIG.usecases = [];
+
+        if (Array.isArray(data.authPartners)) {
+          authPartnersList = data.authPartners;
+        }
+
+        // User Interface nach Authentifizierung anpassen
+        setupUIForUser();
+        document.getElementById('loginOverlay').style.display = 'none';
+
+      } catch (e) {
+        err.style.display = 'block';
+        err.textContent = "Verbindungsfehler: " + e.message;
+        btn.disabled = false;
+        btn.textContent = "Anmelden & Daten laden";
+      }
+    }
+
+    function setupUIForUser() {
+      // Header Info
+      document.getElementById('userNameDisplay').textContent = currentUser.name;
+      const roleBadge = document.getElementById('userRoleBadge');
+      roleBadge.textContent = isAdmin ? 'Admin' : currentUser.role.toUpperCase();
+      roleBadge.className = `role-badge role-${currentUser.role}`;
+      roleBadge.style.display = 'inline-block';
+
+      // Badges aktualisieren
+      document.getElementById('badgeVermarkter').textContent = CONFIG.vermarkter.length;
+      document.getElementById('badgeSSPs').textContent = CONFIG.ssps.length;
+      document.getElementById('badgeDSPs').textContent = CONFIG.dsps.length;
+      document.getElementById('badgeDataPartners').textContent = CONFIG.dataPartners.length;
+
+      // Alle Sektionen zunächst verbergen
+      hideAllSections();
+
+      if (isAdmin) {
+        // ADMIN-ANSICHT
+        document.getElementById('adminTabsBar').style.display = 'block';
+        document.getElementById('adminExpertAccordion').style.display = 'block';
+        document.getElementById('adminVermarkterSelectBox').style.display = 'flex';
+        document.getElementById('adminSspSelectBox').style.display = 'flex';
+        document.getElementById('adminDspSelectBox').style.display = 'flex';
+        document.getElementById('adminDpSelectBox').style.display = 'flex';
+
+        // Dropdowns befüllen
+        populateAdminDropdowns();
+        renderAuthTable();
+
+        // Standardmäßig ersten Tab öffnen
+        switchAdminTab('vermarkter');
+      } else {
+        // PARTNER-ANSICHT (Fokussiert)
+        document.getElementById('adminTabsBar').style.display = 'none';
+        document.getElementById('adminExpertAccordion').style.display = 'none';
+
+        if (currentUser.role === 'vermarkter') {
+          document.getElementById('sectionVermarkter').style.display = 'block';
+          document.getElementById('adminVermarkterSelectBox').style.display = 'none';
+          document.getElementById('vermarkterSectionTitle').textContent = `Vermarkter: ${currentUser.name}`;
+          loadVermarkter(currentUser.id);
+
+        } else if (currentUser.role === 'ssp') {
+          document.getElementById('sectionSSP').style.display = 'block';
+          document.getElementById('adminSspSelectBox').style.display = 'none';
+          document.getElementById('sspSectionTitle').textContent = `SSP: ${currentUser.name}`;
+          loadSSP(currentUser.id);
+
+        } else if (currentUser.role === 'dsp') {
+          document.getElementById('sectionDSP').style.display = 'block';
+          document.getElementById('adminDspSelectBox').style.display = 'none';
+          document.getElementById('dspSectionTitle').textContent = `DSP: ${currentUser.name}`;
+          loadDSP(currentUser.id);
+
+        } else if (currentUser.role === 'data_partner') {
+          document.getElementById('sectionDataPartner').style.display = 'block';
+          document.getElementById('adminDpSelectBox').style.display = 'none';
+          document.getElementById('dpSectionTitle').textContent = `Data Partner: ${currentUser.name}`;
+          loadDataPartner(currentUser.id);
+        }
+      }
+    }
+
+    function hideAllSections() {
+      document.getElementById('sectionVermarkter').style.display = 'none';
+      document.getElementById('sectionSSP').style.display = 'none';
+      document.getElementById('sectionDSP').style.display = 'none';
+      document.getElementById('sectionDataPartner').style.display = 'none';
+      document.getElementById('sectionCoreCatalogs').style.display = 'none';
+      document.getElementById('sectionAuthRegistry').style.display = 'none';
+    }
+
+    function logout() {
+      sessionPassword = "";
+      currentUser = null;
+      isAdmin = false;
+      document.getElementById('loginPassword').value = '';
+      document.getElementById('loginOverlay').style.display = 'flex';
+      hideAllSections();
+      document.getElementById('adminTabsBar').style.display = 'none';
+    }
+
+    // -----------------------------------------------------------------
+    // ADMIN TAB STEUERUNG
+    // -----------------------------------------------------------------
+    function switchAdminTab(tabKey) {
+      if (!isAdmin) return;
+      activeAdminTab = tabKey;
+
+      document.querySelectorAll('.tab-item').forEach(t => t.classList.remove('active'));
+      hideAllSections();
+
+      if (tabKey === 'vermarkter') {
+        document.querySelectorAll('.tab-item')[0].classList.add('active');
+        document.getElementById('sectionVermarkter').style.display = 'block';
+        if (!activeVermarkterId && CONFIG.vermarkter.length > 0) {
+          loadVermarkter(CONFIG.vermarkter[0].id);
+        }
+      } else if (tabKey === 'ssps') {
+        document.querySelectorAll('.tab-item')[1].classList.add('active');
+        document.getElementById('sectionSSP').style.display = 'block';
+        if (!activeSSPId && CONFIG.ssps.length > 0) {
+          loadSSP(CONFIG.ssps[0].id);
+        }
+      } else if (tabKey === 'dsps') {
+        document.querySelectorAll('.tab-item')[2].classList.add('active');
+        document.getElementById('sectionDSP').style.display = 'block';
+        if (!activeDSPId && CONFIG.dsps.length > 0) {
+          loadDSP(CONFIG.dsps[0].id);
+        }
+      } else if (tabKey === 'dataPartners') {
+        document.querySelectorAll('.tab-item')[3].classList.add('active');
+        document.getElementById('sectionDataPartner').style.display = 'block';
+        if (!activeDPId && CONFIG.dataPartners.length > 0) {
+          loadDataPartner(CONFIG.dataPartners[0].id);
+        }
+      } else if (tabKey === 'coreCatalogs') {
+        document.querySelectorAll('.tab-item')[4].classList.add('active');
+        document.getElementById('sectionCoreCatalogs').style.display = 'block';
+        renderCoreCatalogs();
+      } else if (tabKey === 'authRegistry') {
+        document.querySelectorAll('.tab-item')[5].classList.add('active');
+        document.getElementById('sectionAuthRegistry').style.display = 'block';
+        renderAuthTable();
+      }
+    }
+
+    function populateAdminDropdowns() {
+      // Vermarkter
+      const vSel = document.getElementById('vermarkterSelect');
+      vSel.innerHTML = '<option value="">-- Vermarkter wählen --</option>';
+      CONFIG.vermarkter.forEach(v => {
+        const opt = document.createElement('option');
+        opt.value = v.id; opt.textContent = `${v.name} (${v.id})`;
+        vSel.appendChild(opt);
+      });
+
+      // SSPs
+      const sspSel = document.getElementById('sspSelect');
+      sspSel.innerHTML = '';
+      CONFIG.ssps.forEach(s => {
+        const opt = document.createElement('option');
+        opt.value = s.id; opt.textContent = `${s.name} (${s.id})`;
+        sspSel.appendChild(opt);
+      });
+
+      // DSPs
+      const dspSel = document.getElementById('dspSelect');
+      dspSel.innerHTML = '';
+      CONFIG.dsps.forEach(d => {
+        const opt = document.createElement('option');
+        opt.value = d.id; opt.textContent = `${d.name} (${d.id})`;
+        dspSel.appendChild(opt);
+      });
+
+      // Data Partner
+      const dpSel = document.getElementById('dpSelect');
+      dpSel.innerHTML = '';
+      CONFIG.dataPartners.forEach(p => {
+        const opt = document.createElement('option');
+        opt.value = p.id; opt.textContent = `${p.name} (${p.id})`;
+        dpSel.appendChild(opt);
+      });
+    }
+
+    // -----------------------------------------------------------------
+    // VERMARKTER LOGIK
+    // -----------------------------------------------------------------
+    function loadVermarkter(id) {
+      if (!id) return;
+      activeVermarkterId = id;
+      document.getElementById('vermarkterSelect').value = id;
+
+      const v = CONFIG.vermarkter.find(item => item.id === id) || { id, name: id, description: '', supportedInventoryTypes: [], supportedSSPs: [] };
+      document.getElementById('v_id').value = v.id;
+      document.getElementById('v_name').value = v.name || '';
+      document.getElementById('v_description').value = v.description || '';
+      updateDescCounter();
+
+      // Inventartypen
+      const invContainer = document.getElementById('v_inventory_list');
+      invContainer.innerHTML = '';
+      if (Array.isArray(v.supportedInventoryTypes)) {
+        v.supportedInventoryTypes.forEach(inv => {
+          addInventoryBlock(inv.type, inv.coverage, inv.supportedIds);
+        });
+      }
+
+      // SSP Opt-Ins
+      renderSSPOptIns(v.supportedSSPs || []);
+      updateExpertCodePreview();
+    }
+
+    function updateDescCounter() {
+      const len = (document.getElementById('v_description').value || '').length;
+      document.getElementById('v_desc_counter').textContent = `${len}/65`;
+    }
+
+    function addInventoryBlock(typeVal = 'desktop', covVal = '', supportedIds = []) {
+      const container = document.getElementById('v_inventory_list');
+      const div = document.createElement('div');
+      div.className = 'inventory-block';
+
+      const row = document.createElement('div');
+      row.style.display = 'flex'; row.style.gap = '10px'; row.style.alignItems = 'center';
+
+      const typeSelect = document.createElement('select');
+      typeSelect.className = 'inv-type-select';
+      typeSelect.style.flex = '1';
+      [
+        { id: 'desktop', name: 'Desktop' },
+        { id: 'mobile', name: 'Mobile Web' },
+        { id: 'app', name: 'In-App' },
+        { id: 'ctv', name: 'Connected TV (CTV)' }
+      ].forEach(t => {
+        const opt = document.createElement('option');
+        opt.value = t.id; opt.textContent = t.name;
+        if (t.id === typeVal) opt.selected = true;
+        typeSelect.appendChild(opt);
+      });
+
+      const removeBtn = document.createElement('button');
+      removeBtn.type = 'button';
+      removeBtn.className = 'btn btn-danger';
+      removeBtn.textContent = '✕';
+      removeBtn.style.padding = '8px 12px';
+      removeBtn.onclick = () => { div.remove(); updateExpertCodePreview(); };
+
+      row.appendChild(typeSelect);
+      row.appendChild(removeBtn);
+      div.appendChild(row);
+
+      const idsContainer = document.createElement('div');
+      idsContainer.className = 'nested-ids-wrap';
+      idsContainer.style.marginTop = '10px';
+      idsContainer.style.paddingLeft = '15px';
+      idsContainer.style.borderLeft = '2px solid #cbd5e0';
+
+      const addIdBtn = document.createElement('button');
+      addIdBtn.type = 'button';
+      addIdBtn.className = 'btn btn-secondary';
+      addIdBtn.style.fontSize = '0.8rem';
+      addIdBtn.style.marginTop = '8px';
+      addIdBtn.textContent = '+ ID hinzufügen';
+      addIdBtn.onclick = () => addNestedIdRow(idsContainer, '', '');
+
+      if (Array.isArray(supportedIds)) {
+        supportedIds.forEach(idObj => {
+          const idKey = typeof idObj === 'string' ? idObj : idObj.id;
+          const idCov = typeof idObj === 'string' ? '' : (idObj.coverage || '');
+          const exclDSPs = typeof idObj === 'string' ? [] : (idObj.excludedDSPs || []);
+          addNestedIdRow(idsContainer, idKey, idCov, exclDSPs);
+        });
+      }
+
+      div.appendChild(idsContainer);
+      div.appendChild(addIdBtn);
+      container.appendChild(div);
+      updateExpertCodePreview();
+    }
+
+    function addNestedIdRow(container, keyVal, covVal, excludedDSPs = []) {
+      const rowDiv = document.createElement('div');
+      rowDiv.className = 'nested-id-item';
+
+      const topRow = document.createElement('div');
+      topRow.style.display = 'flex'; topRow.style.gap = '10px'; topRow.style.alignItems = 'center';
+
+      const keySelect = document.createElement('select');
+      keySelect.className = 'nested-id-key';
+      keySelect.style.flex = '1';
+      CONFIG.ids.forEach(idDef => {
+        const opt = document.createElement('option');
+        opt.value = idDef.id; opt.textContent = idDef.name;
+        if (idDef.id === keyVal) opt.selected = true;
+        keySelect.appendChild(opt);
+      });
+
+      const covInput = document.createElement('input');
+      covInput.type = 'number';
+      covInput.className = 'nested-id-cov';
+      covInput.placeholder = 'Coverage %';
+      covInput.min = 0; covInput.max = 100;
+      covInput.value = covVal;
+      covInput.style.width = '120px';
+      covInput.oninput = updateExpertCodePreview;
+
+      const exclBtn = document.createElement('button');
+      exclBtn.type = 'button';
+      exclBtn.className = 'btn btn-secondary';
+      exclBtn.style.fontSize = '0.8rem';
+      exclBtn.textContent = `DSPs ausschließen (${excludedDSPs.length})`;
+
+      const exclBox = document.createElement('div');
+      exclBox.className = 'dsp-exclusion-box';
+      let currentExcl = [...excludedDSPs];
+
+      function renderDSPs() {
+        exclBox.innerHTML = '';
+        const curId = keySelect.value;
+        let count = 0;
+
+        CONFIG.dsps.forEach(dsp => {
+          const supports = dsp.supportedIds && dsp.supportedIds.some(i => (typeof i === 'string' ? i : i.id) === curId);
+          if (!supports) return;
+          count++;
+
+          const lbl = document.createElement('label');
+          lbl.className = 'checkbox-item';
+          const cb = document.createElement('input');
+          cb.type = 'checkbox'; cb.value = dsp.id;
+          cb.checked = currentExcl.includes(dsp.id);
+          cb.onchange = () => {
+            if (cb.checked) {
+              if (!currentExcl.includes(dsp.id)) currentExcl.push(dsp.id);
+            } else {
+              currentExcl = currentExcl.filter(x => x !== dsp.id);
+            }
+            exclBtn.textContent = `DSPs ausschließen (${currentExcl.length})`;
+            exclBtn.style.background = currentExcl.length > 0 ? '#fde8e8' : '';
+            exclBtn.style.color = currentExcl.length > 0 ? '#c81e1e' : '';
+            updateExpertCodePreview();
+          };
+          lbl.appendChild(cb);
+          lbl.appendChild(document.createTextNode(dsp.name));
+          exclBox.appendChild(lbl);
+        });
+
+        if (count === 0) {
+          exclBox.innerHTML = '<div style="color: #a0aec0; font-size: 0.8rem;">Keine DSP unterstützt dieses ID-System.</div>';
+        }
+      }
+
+      renderDSPs();
+      keySelect.onchange = () => { currentExcl = []; renderDSPs(); updateExpertCodePreview(); };
+      exclBtn.onclick = () => { exclBox.style.display = exclBox.style.display === 'none' ? 'grid' : 'none'; };
+
+      const delBtn = document.createElement('button');
+      delBtn.type = 'button';
+      delBtn.className = 'btn btn-danger';
+      delBtn.textContent = '✕';
+      delBtn.style.padding = '6px 10px';
+      delBtn.onclick = () => { rowDiv.remove(); updateExpertCodePreview(); };
+
+      topRow.appendChild(keySelect);
+      topRow.appendChild(covInput);
+      topRow.appendChild(exclBtn);
+      topRow.appendChild(delBtn);
+
+      rowDiv.appendChild(topRow);
+      rowDiv.appendChild(exclBox);
+      container.appendChild(rowDiv);
+    }
+
+    function renderSSPOptIns(selectedSSPs = []) {
+      const container = document.getElementById('v_ssp_opt_in_list');
+      container.innerHTML = '';
+      CONFIG.ssps.forEach(ssp => {
+        const lbl = document.createElement('label');
+        lbl.className = 'checkbox-item';
+        const cb = document.createElement('input');
+        cb.type = 'checkbox'; cb.value = ssp.id;
+        cb.checked = selectedSSPs.includes(ssp.id);
+        cb.onchange = updateExpertCodePreview;
+        lbl.appendChild(cb);
+        lbl.appendChild(document.createTextNode(ssp.name));
+        container.appendChild(lbl);
+      });
+    }
+
+    function buildVermarkterObject() {
+      const vId = document.getElementById('v_id').value;
+      const vObj = {
+        id: vId,
+        name: document.getElementById('v_name').value.trim(),
+        description: document.getElementById('v_description').value.trim(),
+        supportedInventoryTypes: [],
+        supportedSSPs: []
+      };
+
+      document.querySelectorAll('#v_inventory_list .inventory-block').forEach(block => {
+        const typeKey = block.querySelector('.inv-type-select').value;
+        const invObj = { type: typeKey, supportedIds: [] };
+
+        block.querySelectorAll('.nested-id-item').forEach(idItem => {
+          const idKey = idItem.querySelector('.nested-id-key').value;
+          const covVal = idItem.querySelector('.nested-id-cov').value;
+          const idObj = { id: idKey };
+          if (covVal !== '') idObj.coverage = parseInt(covVal, 10);
+
+          const excl = [];
+          idItem.querySelectorAll('.dsp-exclusion-box input:checked').forEach(cb => excl.push(cb.value));
+          if (excl.length > 0) idObj.excludedDSPs = excl;
+
+          invObj.supportedIds.push(idObj);
+        });
+
+        vObj.supportedInventoryTypes.push(invObj);
+      });
+
+      document.querySelectorAll('#v_ssp_opt_in_list input:checked').forEach(cb => {
+        vObj.supportedSSPs.push(cb.value);
+      });
+
+      return vObj;
+    }
+
+    function generateVermarkterJsCode(vObj) {
+      return `if (!window.OVK_LANDSCAPE_CONFIG) {\n  window.OVK_LANDSCAPE_CONFIG = {};\n}\nif (!window.OVK_LANDSCAPE_CONFIG.vermarkter) {\n  window.OVK_LANDSCAPE_CONFIG.vermarkter = [];\n}\n\nwindow.OVK_LANDSCAPE_CONFIG.vermarkter.push(${JSON.stringify(vObj, null, 2)});\n`;
+    }
+
+    async function saveActiveVermarkter() {
+      const vObj = buildVermarkterObject();
+      const code = generateVermarkterJsCode(vObj);
+      const statusEl = document.getElementById('vermarkterStatusMsg');
+      const btn = document.getElementById('saveVermarkterBtn');
+
+      btn.disabled = true;
+      btn.textContent = "Speichere im Ziel-Repository...";
+      statusEl.style.display = 'none';
+
+      try {
+        const res = await fetch(WORKER_URL + "/save", {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            password: sessionPassword,
+            target: 'vermarkter',
+            partnerId: vObj.id,
+            code
+          })
+        });
+
+        const resData = await res.json();
+        if (res.ok) {
+          statusEl.className = 'status-msg success';
+          statusEl.textContent = `✓ Erfolgreich in ${resData.savedPath || 'Repository'} gespeichert!`;
+          statusEl.style.display = 'inline-block';
+
+          // Lokalen Cache aktualisieren
+          const existingIdx = CONFIG.vermarkter.findIndex(v => v.id === vObj.id);
+          if (existingIdx >= 0) CONFIG.vermarkter[existingIdx] = vObj;
+          else CONFIG.vermarkter.push(vObj);
+
+        } else {
+          statusEl.className = 'status-msg error';
+          statusEl.textContent = `Fehler: ${resData.error || 'Speichern fehlgeschlagen'}`;
+          statusEl.style.display = 'inline-block';
+        }
+      } catch (e) {
+        statusEl.className = 'status-msg error';
+        statusEl.textContent = "Netzwerkfehler: " + e.message;
+        statusEl.style.display = 'inline-block';
+      } finally {
+        btn.disabled = false;
+        btn.textContent = "💾 Änderungen für diesen Vermarkter speichern";
+      }
+    }
+
+    function createNewVermarkter() {
+      const newId = prompt("Bitte technische ID für den neuen Vermarkter eingeben (z. B. 'mein_vermarkter'):");
+      if (!newId) return;
+      const cleanId = newId.trim().toLowerCase().replace(/[^a-z0-9_]/g, '_');
+      if (CONFIG.vermarkter.some(v => v.id === cleanId)) {
+        alert("Ein Vermarkter mit dieser ID existiert bereits!");
+        return;
+      }
+      const newV = { id: cleanId, name: cleanId, description: '', supportedInventoryTypes: [], supportedSSPs: [] };
+      CONFIG.vermarkter.push(newV);
+      populateAdminDropdowns();
+      loadVermarkter(cleanId);
+    }
+
+    // -----------------------------------------------------------------
+    // SSP LOGIK
+    // -----------------------------------------------------------------
+    function loadSSP(id) {
+      if (!id) return;
+      activeSSPId = id;
+      document.getElementById('sspSelect').value = id;
+
+      const s = CONFIG.ssps.find(item => item.id === id) || { id, name: id, category: 'standard', supportedIds: [], supportedUsecases: [] };
+      document.getElementById('ssp_id').value = s.id;
+      document.getElementById('ssp_name').value = s.name || '';
+      document.getElementById('ssp_category').value = s.category || 'standard';
+
+      // Checkboxes für IDs
+      renderCheckboxList('ssp_ids_list', CONFIG.ids, s.supportedIds || []);
+      // Checkboxes für Usecases
+      renderCheckboxList('ssp_usecases_list', CONFIG.usecases, s.supportedUsecases || []);
+
+      if (isAdmin) {
+        document.getElementById('deleteSspBtn').style.display = 'inline-flex';
+      }
+      updateExpertCodePreview();
+    }
+
+    async function saveActiveSSP() {
+      const sspId = document.getElementById('ssp_id').value;
+      const sspData = {
+        name: document.getElementById('ssp_name').value.trim(),
+        category: document.getElementById('ssp_category').value,
+        supportedIds: getCheckedValues('ssp_ids_list'),
+        supportedUsecases: getCheckedValues('ssp_usecases_list')
+      };
+
+      const btn = document.getElementById('saveSspBtn');
+      const statusEl = document.getElementById('sspStatusMsg');
+      btn.disabled = true; btn.textContent = "Speichere SSP...";
+      statusEl.style.display = 'none';
+
+      try {
+        const res = await fetch(WORKER_URL + "/save", {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            password: sessionPassword,
+            target: 'ssp',
+            partnerId: sspId,
+            data: sspData
+          })
+        });
+
+        const resData = await res.json();
+        if (res.ok) {
+          statusEl.className = 'status-msg success';
+          statusEl.textContent = `✓ SSP ${sspId} erfolgreich im Ziel-Repository gespeichert!`;
+          statusEl.style.display = 'inline-block';
+
+          // Lokalen Stand aktualisieren
+          const idx = CONFIG.ssps.findIndex(s => s.id === sspId);
+          if (idx >= 0) CONFIG.ssps[idx] = { ...CONFIG.ssps[idx], ...sspData, id: sspId };
+          else CONFIG.ssps.push({ ...sspData, id: sspId });
+
+        } else {
+          statusEl.className = 'status-msg error';
+          statusEl.textContent = `Fehler: ${resData.error || 'Speichern fehlgeschlagen'}`;
+          statusEl.style.display = 'inline-block';
+        }
+      } catch (e) {
+        statusEl.className = 'status-msg error';
+        statusEl.textContent = "Netzwerkfehler: " + e.message;
+        statusEl.style.display = 'inline-block';
+      } finally {
+        btn.disabled = false;
+        btn.textContent = "💾 SSP-Konfiguration speichern";
+      }
+    }
+
+    function createNewSSP() {
+      const newId = prompt("Bitte technische ID für die neue SSP eingeben (z. B. 'magnite'):");
+      if (!newId) return;
+      const cleanId = newId.trim().toLowerCase().replace(/[^a-z0-9_]/g, '_');
+      if (CONFIG.ssps.some(s => s.id === cleanId)) {
+        alert("Diese SSP existiert bereits!");
+        return;
+      }
+      const newSSP = { id: cleanId, name: cleanId, category: 'standard', supportedIds: [], supportedUsecases: [] };
+      CONFIG.ssps.push(newSSP);
+      populateAdminDropdowns();
+      loadSSP(cleanId);
+    }
+
+    function deleteActiveSSP() {
+      if (!confirm(`Möchtest du die SSP "${activeSSPId}" wirklich aus der Konfiguration entfernen?`)) return;
+      CONFIG.ssps = CONFIG.ssps.filter(s => s.id !== activeSSPId);
+      saveCoreCatalogs();
+      populateAdminDropdowns();
+      if (CONFIG.ssps.length > 0) loadSSP(CONFIG.ssps[0].id);
+    }
+
+    // -----------------------------------------------------------------
+    // DSP LOGIK
+    // -----------------------------------------------------------------
+    function loadDSP(id) {
+      if (!id) return;
+      activeDSPId = id;
+      document.getElementById('dspSelect').value = id;
+
+      const d = CONFIG.dsps.find(item => item.id === id) || { id, name: id, logo: '', supportedIds: [], supportedUsecases: [], supportedSSPs: [] };
+      document.getElementById('dsp_id').value = d.id;
+      document.getElementById('dsp_name').value = d.name || '';
+      document.getElementById('dsp_logo').value = d.logo || '';
+
+      renderCheckboxList('dsp_ids_list', CONFIG.ids, d.supportedIds || []);
+      renderCheckboxList('dsp_usecases_list', CONFIG.usecases, d.supportedUsecases || []);
+      renderCheckboxList('dsp_ssps_list', CONFIG.ssps, d.supportedSSPs || []);
+
+      if (isAdmin) {
+        document.getElementById('deleteDspBtn').style.display = 'inline-flex';
+      }
+      updateExpertCodePreview();
+    }
+
+    async function saveActiveDSP() {
+      const dspId = document.getElementById('dsp_id').value;
+      const dspData = {
+        name: document.getElementById('dsp_name').value.trim(),
+        logo: document.getElementById('dsp_logo').value.trim(),
+        supportedIds: getCheckedValues('dsp_ids_list'),
+        supportedUsecases: getCheckedValues('dsp_usecases_list'),
+        supportedSSPs: getCheckedValues('dsp_ssps_list')
+      };
+
+      const btn = document.getElementById('saveDspBtn');
+      const statusEl = document.getElementById('dspStatusMsg');
+      btn.disabled = true; btn.textContent = "Speichere DSP...";
+      statusEl.style.display = 'none';
+
+      try {
+        const res = await fetch(WORKER_URL + "/save", {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            password: sessionPassword,
+            target: 'dsp',
+            partnerId: dspId,
+            data: dspData
+          })
+        });
+
+        const resData = await res.json();
+        if (res.ok) {
+          statusEl.className = 'status-msg success';
+          statusEl.textContent = `✓ DSP ${dspId} erfolgreich im Ziel-Repository gespeichert!`;
+          statusEl.style.display = 'inline-block';
+
+          const idx = CONFIG.dsps.findIndex(d => d.id === dspId);
+          if (idx >= 0) CONFIG.dsps[idx] = { ...CONFIG.dsps[idx], ...dspData, id: dspId };
+          else CONFIG.dsps.push({ ...dspData, id: dspId });
+
+        } else {
+          statusEl.className = 'status-msg error';
+          statusEl.textContent = `Fehler: ${resData.error || 'Speichern fehlgeschlagen'}`;
+          statusEl.style.display = 'inline-block';
+        }
+      } catch (e) {
+        statusEl.className = 'status-msg error';
+        statusEl.textContent = "Netzwerkfehler: " + e.message;
+        statusEl.style.display = 'inline-block';
+      } finally {
+        btn.disabled = false;
+        btn.textContent = "💾 DSP-Konfiguration speichern";
+      }
+    }
+
+    function createNewDSP() {
+      const newId = prompt("Bitte technische ID für die neue DSP eingeben (z. B. 'ttd'):");
+      if (!newId) return;
+      const cleanId = newId.trim().toLowerCase().replace(/[^a-z0-9_]/g, '_');
+      if (CONFIG.dsps.some(d => d.id === cleanId)) {
+        alert("Diese DSP existiert bereits!");
+        return;
+      }
+      const newDSP = { id: cleanId, name: cleanId, logo: cleanId.toUpperCase(), supportedIds: [], supportedUsecases: [], supportedSSPs: [] };
+      CONFIG.dsps.push(newDSP);
+      populateAdminDropdowns();
+      loadDSP(cleanId);
+    }
+
+    function deleteActiveDSP() {
+      if (!confirm(`Möchtest du die DSP "${activeDSPId}" wirklich entfernen?`)) return;
+      CONFIG.dsps = CONFIG.dsps.filter(d => d.id !== activeDSPId);
+      saveCoreCatalogs();
+      populateAdminDropdowns();
+      if (CONFIG.dsps.length > 0) loadDSP(CONFIG.dsps[0].id);
+    }
+
+    // -----------------------------------------------------------------
+    // DATA PARTNER LOGIK
+    // -----------------------------------------------------------------
+    function loadDataPartner(id) {
+      if (!id) return;
+      activeDPId = id;
+      document.getElementById('dpSelect').value = id;
+
+      const p = CONFIG.dataPartners.find(item => item.id === id) || { id, name: id, description: '', supportedIds: [], supportedDSPs: [], supportedSSPs: [] };
+      document.getElementById('dp_id').value = p.id;
+      document.getElementById('dp_name').value = p.name || '';
+      document.getElementById('dp_description').value = p.description || '';
+
+      renderCheckboxList('dp_ids_list', CONFIG.ids, p.supportedIds || []);
+      renderCheckboxList('dp_dsps_list', CONFIG.dsps, p.supportedDSPs || []);
+      renderCheckboxList('dp_ssps_list', CONFIG.ssps, p.supportedSSPs || []);
+
+      if (isAdmin) {
+        document.getElementById('deleteDpBtn').style.display = 'inline-flex';
+      }
+      updateExpertCodePreview();
+    }
+
+    async function saveActiveDataPartner() {
+      const dpId = document.getElementById('dp_id').value;
+      const dpData = {
+        name: document.getElementById('dp_name').value.trim(),
+        description: document.getElementById('dp_description').value.trim(),
+        supportedIds: getCheckedValues('dp_ids_list'),
+        supportedDSPs: getCheckedValues('dp_dsps_list'),
+        supportedSSPs: getCheckedValues('dp_ssps_list')
+      };
+
+      const btn = document.getElementById('saveDpBtn');
+      const statusEl = document.getElementById('dpStatusMsg');
+      btn.disabled = true; btn.textContent = "Speichere Data Partner...";
+      statusEl.style.display = 'none';
+
+      try {
+        const res = await fetch(WORKER_URL + "/save", {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            password: sessionPassword,
+            target: 'data_partner',
+            partnerId: dpId,
+            data: dpData
+          })
+        });
+
+        const resData = await res.json();
+        if (res.ok) {
+          statusEl.className = 'status-msg success';
+          statusEl.textContent = `✓ Data Partner ${dpId} erfolgreich im Ziel-Repository gespeichert!`;
+          statusEl.style.display = 'inline-block';
+
+          const idx = CONFIG.dataPartners.findIndex(d => d.id === dpId);
+          if (idx >= 0) CONFIG.dataPartners[idx] = { ...CONFIG.dataPartners[idx], ...dpData, id: dpId };
+          else CONFIG.dataPartners.push({ ...dpData, id: dpId });
+
+        } else {
+          statusEl.className = 'status-msg error';
+          statusEl.textContent = `Fehler: ${resData.error || 'Speichern fehlgeschlagen'}`;
+          statusEl.style.display = 'inline-block';
+        }
+      } catch (e) {
+        statusEl.className = 'status-msg error';
+        statusEl.textContent = "Netzwerkfehler: " + e.message;
+        statusEl.style.display = 'inline-block';
+      } finally {
+        btn.disabled = false;
+        btn.textContent = "💾 Data-Partner-Konfiguration speichern";
+      }
+    }
+
+    function createNewDataPartner() {
+      const newId = prompt("Bitte technische ID für den Data Partner eingeben (z. B. 'mein_partner_data'):");
+      if (!newId) return;
+      const cleanId = newId.trim().toLowerCase().replace(/[^a-z0-9_]/g, '_');
+      if (CONFIG.dataPartners.some(p => p.id === cleanId)) {
+        alert("Dieser Data Partner existiert bereits!");
+        return;
+      }
+      const newDP = { id: cleanId, name: cleanId, description: '', supportedIds: [], supportedDSPs: [], supportedSSPs: [] };
+      CONFIG.dataPartners.push(newDP);
+      populateAdminDropdowns();
+      loadDataPartner(cleanId);
+    }
+
+    function deleteActiveDataPartner() {
+      if (!confirm(`Möchtest du den Data Partner "${activeDPId}" wirklich entfernen?`)) return;
+      CONFIG.dataPartners = CONFIG.dataPartners.filter(p => p.id !== activeDPId);
+      saveEntireDataPartnersFile();
+      populateAdminDropdowns();
+      if (CONFIG.dataPartners.length > 0) loadDataPartner(CONFIG.dataPartners[0].id);
+    }
+
+    async function saveEntireDataPartnersFile() {
+      const code = `// OVK ID Landscape Map - Data Partner Konfigurationsdaten\n\nif (!window.OVK_LANDSCAPE_CONFIG) {\n  window.OVK_LANDSCAPE_CONFIG = {};\n}\n\nwindow.OVK_LANDSCAPE_CONFIG.dataPartners = ${JSON.stringify(CONFIG.dataPartners, null, 2)};\n`;
+      await fetch(WORKER_URL + "/save", {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password: sessionPassword, target: 'data_partners', code })
+      });
+    }
+
+    // -----------------------------------------------------------------
+    // CORE KATALOGE (IDs & Usecases)
+    // -----------------------------------------------------------------
+    function renderCoreCatalogs() {
+      const idsWrap = document.getElementById('coreIdsList');
+      idsWrap.innerHTML = '';
+      CONFIG.ids.forEach(idDef => {
+        const item = document.createElement('div');
+        item.style.padding = '10px 14px'; item.style.border = '1px solid var(--color-border)';
+        item.style.borderRadius = '6px'; item.style.marginBottom = '8px';
+        item.innerHTML = `<strong>${idDef.name}</strong> (<code>${idDef.id}</code>) – <span style="color: var(--color-text-muted); font-size: 0.88rem;">${idDef.description || ''}</span>`;
+        idsWrap.appendChild(item);
+      });
+
+      const ucWrap = document.getElementById('coreUsecasesList');
+      ucWrap.innerHTML = '';
+      CONFIG.usecases.forEach(u => {
+        const item = document.createElement('div');
+        item.style.padding = '10px 14px'; item.style.border = '1px solid var(--color-border)';
+        item.style.borderRadius = '6px'; item.style.marginBottom = '8px';
+        item.innerHTML = `<strong>${u.name}</strong> (<code>${u.id}</code>) – <span style="color: var(--color-text-muted); font-size: 0.88rem;">${u.description || ''}</span>`;
+        ucWrap.appendChild(item);
+      });
+    }
+
+    async function saveCoreCatalogs() {
+      const corePayload = {
+        ids: CONFIG.ids,
+        usecases: CONFIG.usecases,
+        dsps: CONFIG.dsps,
+        ssps: CONFIG.ssps
+      };
+      const code = `// OVK ID Landscape Map - Core Konfigurationsdaten\n// IDs, Usecases, DSPs, SSPs\n\nwindow.OVK_LANDSCAPE_CONFIG = ${JSON.stringify(corePayload, null, 2)};\n`;
+      const statusEl = document.getElementById('coreStatusMsg');
+      statusEl.style.display = 'none';
+
+      try {
+        const res = await fetch(WORKER_URL + "/save", {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ password: sessionPassword, target: 'core', code })
+        });
+        const data = await res.json();
+        if (res.ok) {
+          statusEl.className = 'status-msg success';
+          statusEl.textContent = '✓ Core-Konfiguration erfolgreich im Repository aktualisiert!';
+          statusEl.style.display = 'inline-block';
+        } else {
+          statusEl.className = 'status-msg error';
+          statusEl.textContent = 'Fehler: ' + (data.error || 'Speichern fehlgeschlagen');
+          statusEl.style.display = 'inline-block';
+        }
+      } catch (e) {
+        statusEl.className = 'status-msg error';
+        statusEl.textContent = 'Netzwerkfehler: ' + e.message;
+        statusEl.style.display = 'inline-block';
+      }
+    }
+
+    // -----------------------------------------------------------------
+    // PARTNER-LOGINS VERWALTUNG (AUTH REGISTRY)
+    // -----------------------------------------------------------------
+    function renderAuthTable() {
+      const tbody = document.getElementById('authTableBody');
+      tbody.innerHTML = '';
+
+      if (!authPartnersList || authPartnersList.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: var(--color-text-muted); padding: 20px;">Noch keine Partner-Accounts in der Registry angelegt.</td></tr>';
+        return;
+      }
+
+      authPartnersList.forEach(p => {
+        const tr = document.createElement('tr');
+        const roleClass = `role-${p.role}`;
+        const updatedDate = p.updatedAt ? new Date(p.updatedAt).toLocaleString('de-DE') : '-';
+
+        tr.innerHTML = `
+          <td><strong><code>${p.id}</code></strong></td>
+          <td>${p.name || p.id}</td>
+          <td><span class="role-badge ${roleClass}">${p.role}</span></td>
+          <td style="color: var(--color-text-muted); font-size: 0.85rem;">${updatedDate}</td>
+          <td style="text-align: right;">
+            <button type="button" class="btn btn-secondary" style="font-size: 0.8rem; padding: 4px 10px;" onclick="editPartnerAuth('${p.id}', '${p.role}', '${p.name}')">🔑 Passwort ändern</button>
+            <button type="button" class="btn btn-danger" style="font-size: 0.8rem; padding: 4px 10px; margin-left: 6px;" onclick="deletePartnerAuth('${p.id}')">🗑️ Löschen</button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function editPartnerAuth(id, role, name) {
+      document.getElementById('auth_partner_id').value = id;
+      document.getElementById('auth_partner_id').disabled = true;
+      document.getElementById('auth_role').value = role;
+      document.getElementById('auth_name').value = name;
+      document.getElementById('auth_password').value = '';
+      document.getElementById('auth_password').focus();
+      document.getElementById('authFormTitle').textContent = `Passwort ändern für "${name}" (${id})`;
+    }
+
+    function resetAuthForm() {
+      document.getElementById('auth_partner_id').value = '';
+      document.getElementById('auth_partner_id').disabled = false;
+      document.getElementById('auth_role').value = 'vermarkter';
+      document.getElementById('auth_name').value = '';
+      document.getElementById('auth_password').value = '';
+      document.getElementById('authFormTitle').textContent = 'Neuen Partner-Login anlegen';
+    }
+
+    function generateRandomPassword() {
+      const chars = "abcdefghjkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789!@#$%&*";
+      let pwd = "";
+      for (let i = 0; i < 14; i++) {
+        pwd += chars.charAt(Math.floor(Math.random() * chars.length));
+      }
+      document.getElementById('auth_password').value = pwd;
+    }
+
+    async function submitPartnerAuth() {
+      const pId = document.getElementById('auth_partner_id').value.trim();
+      const role = document.getElementById('auth_role').value;
+      const name = document.getElementById('auth_name').value.trim() || pId;
+      const pwd = document.getElementById('auth_password').value.trim();
+
+      if (!pId || !pwd) {
+        alert("Bitte sowohl Partner ID als auch ein Passwort angeben!");
+        return;
+      }
+
+      try {
+        const res = await fetch(WORKER_URL + "/admin/save-partner-auth", {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            password: sessionPassword,
+            targetPartnerId: pId,
+            role,
+            name,
+            newPassword: pwd
+          })
+        });
+
+        const data = await res.json();
+        if (res.ok) {
+          alert(`✓ Partner-Login für "${name}" erfolgreich im Repository hinterlegt!`);
+          
+          // Lokale Liste aktualisieren
+          const existing = authPartnersList.find(p => p.id === pId);
+          if (existing) {
+            existing.role = role; existing.name = name; existing.updatedAt = new Date().toISOString();
+          } else {
+            authPartnersList.push({ id: pId, role, name, updatedAt: new Date().toISOString() });
+          }
+          resetAuthForm();
+          renderAuthTable();
+
+        } else {
+          alert("Fehler beim Speichern: " + (data.error || 'Unbekannter Fehler'));
+        }
+      } catch (e) {
+        alert("Netzwerkfehler: " + e.message);
+      }
+    }
+
+    async function deletePartnerAuth(pId) {
+      if (!confirm(`Soll der Login für "${pId}" wirklich gelöscht werden? Der Partner kann sich danach nicht mehr einloggen.`)) return;
+
+      try {
+        const res = await fetch(WORKER_URL + "/admin/delete-partner-auth", {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            password: sessionPassword,
+            targetPartnerId: pId
+          })
+        });
+
+        const data = await res.json();
+        if (res.ok) {
+          authPartnersList = authPartnersList.filter(p => p.id !== pId);
+          renderAuthTable();
+          alert(`✓ Login für ${pId} wurde entfernt.`);
+        } else {
+          alert("Fehler beim Löschen: " + (data.error || 'Unbekannter Fehler'));
+        }
+      } catch (e) {
+        alert("Netzwerkfehler: " + e.message);
+      }
+    }
+
+    // -----------------------------------------------------------------
+    // HILFSFUNKTIONEN (Checkboxes & Expertenansicht)
+    // -----------------------------------------------------------------
+    function renderCheckboxList(containerId, itemsArray, checkedValues) {
+      const container = document.getElementById(containerId);
+      container.innerHTML = '';
+      itemsArray.forEach(item => {
+        const itemId = typeof item === 'string' ? item : item.id;
+        const itemName = typeof item === 'string' ? item : (item.name || item.id);
+        const isChecked = checkedValues.some(v => (typeof v === 'string' ? v : v.id) === itemId);
+
+        const lbl = document.createElement('label');
+        lbl.className = 'checkbox-item';
+        const cb = document.createElement('input');
+        cb.type = 'checkbox'; cb.value = itemId; cb.checked = isChecked;
+        cb.onchange = updateExpertCodePreview;
+        lbl.appendChild(cb);
+        lbl.appendChild(document.createTextNode(itemName));
+        container.appendChild(lbl);
+      });
+    }
+
+    function getCheckedValues(containerId) {
+      const values = [];
+      document.querySelectorAll(`#${containerId} input:checked`).forEach(cb => values.push(cb.value));
+      return values;
+    }
+
+    function toggleExpertContent() {
+      const content = document.getElementById('expertCodePreview');
+      const arrow = document.getElementById('expertToggleArrow');
+      if (content.style.display === 'block') {
+        content.style.display = 'none'; arrow.textContent = '▼';
+      } else {
+        content.style.display = 'block'; arrow.textContent = '▲';
+        updateExpertCodePreview();
+      }
+    }
+
+    function updateExpertCodePreview() {
+      if (!isAdmin) return;
+      const preview = document.getElementById('expertCodePreview');
+      if (activeAdminTab === 'vermarkter' && activeVermarkterId) {
+        preview.textContent = generateVermarkterJsCode(buildVermarkterObject());
+      } else if (activeAdminTab === 'ssps') {
+        preview.textContent = `// SSPs in config/core.js\n` + JSON.stringify(CONFIG.ssps, null, 2);
+      } else if (activeAdminTab === 'dsps') {
+        preview.textContent = `// DSPs in config/core.js\n` + JSON.stringify(CONFIG.dsps, null, 2);
+      } else if (activeAdminTab === 'dataPartners') {
+        preview.textContent = `// config/data_partners.js\n` + JSON.stringify(CONFIG.dataPartners, null, 2);
+      } else if (activeAdminTab === 'coreCatalogs') {
+        preview.textContent = `// config/core.js\n` + JSON.stringify({ ids: CONFIG.ids, usecases: CONFIG.usecases }, null, 2);
+      }
+    }
+  </script>
+</body>
+</html>

@@ -4,13 +4,13 @@ Diese Anleitung richtet sich an **Vermarkter** und **Data Partner**, die ihre Da
 
 ---
 
-## 1. Übersicht
+## 1. Übersicht & Zugang
 
-Sie haben von der OVK-Administration einen individuellen Link und ein Passwort erhalten.
-* **Vermarkter** nutzen den **Vermarkter Config Editor** (`vermarkter_editor.html?id=<Ihre_ID>`).
-* **Data Partner** nutzen den **Core Editor** (`core_editor.html?id=<Ihre_ID>`).
-
-Alle Änderungen werden nach der Freigabe direkt im offiziellen Repository des OVK ID Landscape gespeichert und sind beim nächsten Neuladen der Karte für den Markt sichtbar.
+Sie haben von der OVK-Administration einen Link zum **OVK Config Portal** und ein Passwort erhalten:
+* **Zentrales Portal:** `https://<domain>/editor.html` (oder mit Direkt-ID: `editor.html?id=<Ihre_ID>`).
+* Das Portal erkennt anhand Ihres Zugangs automatisch Ihr Partnerprofil (Vermarkter, SSP, DSP oder Data Partner) und öffnet direkt Ihre persönliche Pflegemaske.
+* **Kein technischer Code:** Sie pflegen Ihre Daten in einem intuitiven Formular – ganz ohne JavaScript-Code.
+* **🌙 Live-Schaltung:** Alle Änderungen werden sofort im zentralen BVDW-Repository gesichert. In der öffentlichen **OVK ID Landscape Map** greifen die Daten automatisch **über Nacht** mit dem nächsten nächtlichen Build- und Cache-Zyklus.
 
 ---
 
