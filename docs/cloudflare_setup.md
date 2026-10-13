@@ -48,38 +48,33 @@ Füge nun folgende Variablen hinzu (Wähle immer den Button `Encrypt` aus, damit
 *   **Variable 3:**
     *   **Name:** `GITHUB_REPO`
     *   **Value:** `ovk-identifiersupport`
-*   **Variable 4: (Option A) JSON Passwörter (Alte Variante)**
-    *   **Name:** `VERMARKTER_PASSWORDS`
-    *   **Value:** Ein JSON-Objekt. (z.B. `{"funke":"geheim2"}`)
-*   **Variable 4: (Option B) Einzelne Passwörter (Bessere Variante!)**
-    *   Du kannst jedes Passwort einzeln anlegen. Der Name muss immer `PWD_` + `ID` sein.
-    *   **Name:** `PWD_ad_alliance` (für Ad Alliance)
-    *   **Value:** `geheim1`
-    *   **Name:** `PWD_uim_data` (für UIM Data Partner)
-    *   **Value:** `passwort123`
-    *   *Klicke auf `Encrypt` für jedes Passwort!*
-*   **Variable 5:**
+*   **Variable 4: (Master-Admin & Pepper)**
     *   **Name:** `ADMIN_PASSWORD`
-    *   **Value:** Das Master-Passwort für dich als Admin (damit du alle Vermarkter bearbeiten kannst).
+    *   **Value:** Das Master-Passwort für den Administrator (dient gleichzeitig als kryptografischer Pepper für Passwörter).
     *   *Klicke auf `Encrypt`!*
-*   **Variable 6: (Pfad zum Projekt im Repository)**
+*   **Variable 5: (Pfad zum Projekt im Repository)**
     *   **Name:** `GITHUB_BASE_PATH`
-    *   **Value:** `tools/identifier-landscape`
-    *   *Der Worker hängt diesen Pfad dann automatisch vor jeden Speichervorgang.*
-*   **Variable 7: (Optional - Für sicheres Testen)**
+    *   **Value:** `tools/identifier-landscape` (oder leer lassen, falls im Root).
+    *   *Der Worker hängt diesen Pfad automatisch vor jeden Dateizugriff.*
+*   **Variable 6: (Optional - Ziel-Branch)**
     *   **Name:** `GITHUB_BRANCH`
-    *   **Value:** `v2-testing` (Oder der Name deines Test-Branches im originalen Repo)
-    *   *Lässt du diese Variable weg, speichert der Worker standardmäßig in den `main` Branch.*
+    *   **Value:** `main` (oder Name deines Test-Branches).
+*   **Variable 7: (Optional - Zusätzlicher Pepper)**
+    *   **Name:** `AUTH_SALT`
+    *   *Zusätzlicher geheimer Pepper-String für das SHA-256 Hashing.*
+
+> [!TIP]
+> **Partner- und Multi-Admin-Passwörter:** Müssen **nicht mehr** in Cloudflare angelegt werden! Sie werden direkt im Portal (`editor.html` &rarr; *Benutzer & Logins*) verwaltet und sicher in `config/auth_registry.json` im GitHub-Repository gespeichert. Alte `PWD_<id>` Variablen können als Fallback verbleiben.
 
 4. Klicke unten auf **Save and deploy**.
 
 ## Schritt 6: URL kopieren
-1. Gehe in deinem Cloudflare Worker auf den Reiter **Triggers**.
-2. Dort siehst du eine URL unter "Routes", die ähnlich aussieht wie `https://ovk-gatekeeper.<dein-username>.workers.dev`.
-3. Kopiere diese URL! 
-4. Diese URL ist im HTML Editor (`vermarkter_editor.html`) als `WORKER_URL` hinterlegt.
+1. Gehe in deinem Cloudflare Worker auf den Reiter **Triggers** oder die Übersicht.
+2. Dort siehst du deine Worker-URL: `https://ovk-ladscape.friedrich-schenk.workers.dev`.
+3. Diese URL ist im Portal (`editor.html`) als `WORKER_URL` hinterlegt.
 
 ## Schritt 7: Führendes Ziel-Repository (Single Source of Truth)
-Das in den Cloudflare-Variablen (`GITHUB_OWNER`, `GITHUB_REPO`, `GITHUB_BRANCH`, `GITHUB_BASE_PATH`) angegebene Repository ist führend für alle Konfigurationsdateien (`config/core.js`, `config/data_partners.js`, `config/vermarkter/*.js`):
-* Beim Login (`POST /login`) in `vermarkter_editor.html` und `core_editor.html` sowie über `GET /configs` (für `app.js`) lädt der Cloudflare Worker die Dateien direkt über die GitHub API aus dem Ziel-Repository (z. B. `BVDW-org/ovk-identifiersupport`) und übergibt den aktuellen JS-Code samt Pfad an das Frontend.
-* **Wichtig bei Updates an `docs/gatekeeper_worker.js`:** Da Cloudflare Worker nicht automatisch aus GitHub aktualisiert werden, muss nach einer Änderung an `docs/gatekeeper_worker.js` der gesamte Inhalt der Datei einmalig im Cloudflare Dashboard unter **Edit code** eingefügt und mit **Save and deploy** aktiviert werden.
+Das in den Cloudflare-Variablen angegebene Repository ist führend für alle Konfigurationsdateien:
+* Beim Login im Portal [`editor.html`](editor.html) lädt der Cloudflare Worker die Dateien direkt über die GitHub API aus dem Ziel-Repository (z. B. `BVDW-org/ovk-identifiersupport`).
+* **Wichtig bei Updates an `docs/gatekeeper_worker.js`:** Wenn `docs/gatekeeper_worker.js` erweitert wird (z. B. für Multi-Admin oder neue Speicher-Endpoints), kopiere den Code einmalig in das Cloudflare Dashboard (**Edit code**) und klicke auf **Save and deploy**.
+

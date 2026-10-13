@@ -126,12 +126,16 @@ Das Projekt ist anschließend im Browser unter [http://localhost:8000](http://lo
 
 ---
 
-## Interaktive Editoren
+## Interaktives Config Portal
 
-Das Projekt bietet visuelle Web-Editoren zur einfachen Bearbeitung der Konfigurationen ohne Syntaxfehler:
+Das Projekt bietet ein modernes, zentrales Web-Portal zur rollenbasierten Pflege aller Konfigurationen:
 
-1. **`vermarkter_editor.html`**: Visual-Editor für Vermarkter-Dateien unter `config/vermarkter/*.js`.
-2. **`core_editor.html`**: Visual-Editor für die zentrale `config/core.js` (DSPs, SSPs, IDs, Usecases) sowie `config/data_partners.js` (Data Partner), inklusive dynamischer Vermarkter-Checkboxen und Live-Code-Vorschau.
+- **[`editor.html`](editor.html)**: **Zentrales OVK Config Portal**
+  - **Multi-Admin-Zugang via E-Mail** & integrierte Benutzerverwaltung (ohne Cloudflare-Dashboard).
+  - **Vermarkter-Ansicht:** Ergonomische Coverage-Matrix für 4 Inventartypen (Desktop, Mobile Web, In-App, CTV), 65-Zeichen-Limit für Beschreibungen, DSP-Ausschlüsse und SSP-Opt-In-Chips.
+  - **Partner-Ansichten (SSPs, DSPs, Data Partner):** Aufgeräumte Formulare ohne technischen JavaScript-Code.
+  - **Sicherheit & Git-Sync:** Synchronisation über den Gatekeeper Worker (`docs/gatekeeper_worker.js`) mit SHA-256 + Salt Verschlüsselung (`config/auth_registry.json`).
+  - *Legacy-Editoren:* [`core_editor.html`](core_editor.html) und [`vermarkter_editor.html`](vermarkter_editor.html) bleiben aus Kompatibilitätsgründen erhalten.
 
 ---
 
@@ -156,10 +160,13 @@ node scripts/validate-config.js
 - `index.html` - Hauptseite mit interaktiver Stufen-Visualisierung
 - `style.css` - Haupt-Stylesheet
 - `app.js` - Anwendungslogik, Filterung & dynamisches Konfigurationsladen
-- `vermarkter_editor.html` - Visueller Editor für Vermarkter-Konfigurationen
-- `core_editor.html` - Visueller Editor für Core- & Data-Partner-Konfigurationen
+- `editor.html` - **Zentrales Unified Config Portal** (Multi-Admin, Vermarkter, SSP, DSP, Data Partner)
+- `core_editor.html` - Legacy-Editor für Core- & Data-Partner-Konfigurationen
+- `vermarkter_editor.html` - Legacy-Editor für Vermarkter-Konfigurationen
 - `config/core.js` - Zentrale Register-Konfiguration (IDs, Usecases, DSPs, SSPs)
 - `config/data_partners.js` - Data-Partner-Konfiguration
+- `config/auth_registry.json` - Git-basierte Benutzer- und Partner-Zugänge (SHA-256 gehasht)
 - `config/vermarkter/` - 9 Vermarkter-Konfigurationsdateien
 - `scripts/validate-config.js` - Skript zur automatisierten Datenvalidierung
-- `docs/adr/` - Architecture Decision Records (ADRs 0001 - 0012)
+- `docs/` - Handbücher (`admin_guide.md`, `partner_guide.md`, `cloudflare_setup.md`), Gatekeeper Worker (`gatekeeper_worker.js`) und Architecture Decision Records (`docs/adr/`)
+
