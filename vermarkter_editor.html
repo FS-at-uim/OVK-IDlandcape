@@ -40,12 +40,58 @@
         
         <button onclick="performLogin()" id="loginBtn" style="width:100%; background: #2563eb; color:white; padding:12px; font-size:16px; border:none; border-radius:4px; cursor:pointer;">Anmelden</button>
         <div id="loginError" style="color:#c81e1e; margin-top:15px; font-weight:bold; display:none;">Falsches Passwort</div>
+        <p style="margin-top: 15px; margin-bottom: 0;"><a href="javascript:void(0)" onclick="openHelpModal()" style="color: #60a5fa; font-size: 0.85em; text-decoration: none;">📖 Anleitung zur Datenpflege anzeigen</a></p>
+    </div>
+</div>
+
+<!-- Interaktives Hilfe-Modal für Vermarkter -->
+<div id="helpModal" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 10001; display: none; align-items: center; justify-content: center; padding: 20px; box-sizing: border-box;" onclick="if(event.target===this) closeHelpModal()">
+    <div style="background: #1e1e1e; border: 1px solid #444; border-radius: 8px; max-width: 800px; width: 100%; max-height: 85vh; overflow-y: auto; padding: 30px; box-shadow: 0 10px 30px rgba(0,0,0,0.7); position: relative; color: #e0e0e0; font-size: 0.95em; line-height: 1.5;">
+        <button type="button" onclick="closeHelpModal()" style="position: absolute; top: 15px; right: 15px; background: transparent; border: none; color: #aaa; font-size: 1.5em; cursor: pointer; padding: 5px 10px;" title="Schließen">&times;</button>
+        
+        <h2 style="margin-top: 0; color: #fff; border-bottom: 1px solid #333; padding-bottom: 10px;">📖 Anleitung zur Datenpflege (Vermarkter)</h2>
+        <p style="color: #aaa; font-size: 0.9em;">Diese Kurzanleitung führt dich durch die Pflege und Veröffentlichung deiner Vermarkter-Konfiguration für die <strong>OVK ID Landscape Map</strong>.</p>
+        
+        <div style="background: #262626; border-left: 4px solid #2563eb; padding: 12px 15px; margin-bottom: 20px; border-radius: 4px;">
+            <strong>Führende Datenquelle:</strong> Nach dem Login lädt der Editor automatisch den aktuellen Stand aus dem offiziellen <code>BVDW-org</code> Repository. Gespeicherte Änderungen werden direkt im BVDW-Repository aktiv.
+        </div>
+
+        <h3 style="color: #60a5fa; margin-top: 20px;">1. Basisdaten</h3>
+        <ul style="padding-left: 20px;">
+            <li><strong>ID:</strong> Technischer Schlüssel (z. B. <code>uim</code>) – schreibgeschützt.</li>
+            <li><strong>Name:</strong> Offizieller Anzeigename deines Vermarkters.</li>
+            <li><strong>Beschreibung:</strong> Kurzbeschreibung für Tooltips und Partner-Karten (max. <strong>65 Zeichen</strong>).</li>
+        </ul>
+
+        <h3 style="color: #60a5fa; margin-top: 20px;">2. Supported Inventory Types & ID Coverage %</h3>
+        <ul style="padding-left: 20px;">
+            <li>Klicke auf <strong>+ Inventory hinzufügen</strong> und wähle die Gattung: <code>Desktop</code>, <code>Mobile Web</code>, <code>In-App</code> oder <code>Connected TV (CTV)</code>.</li>
+            <li>Klicke innerhalb des Blocks auf <strong>+ ID hinzufügen</strong> und wähle das ID-System (z. B. <em>Utiq</em>, <em>netID</em>, <em>netID via Utiq</em>).</li>
+            <li><strong>Coverage %:</strong> Trage den Reichweitenanteil (0–100%) ein, auf dem diese ID in deinem Inventar zur Verfügung steht (z. B. <code>66</code>).</li>
+            <li><strong>DSPs ausschließen (optional):</strong> Falls eine ID für bestimmte DSPs in deinem Setup nicht verfügbar ist, klicke auf <em>DSPs ausschließen</em> und hake die betroffenen DSPs an.</li>
+            <li>Über das rote <strong>X</strong> können IDs oder ganze Inventare entfernt werden.</li>
+        </ul>
+
+        <h3 style="color: #60a5fa; margin-top: 20px;">3. SSP Opt-In</h3>
+        <p>Hake alle Supply Side Platforms (SSPs) an, an die dein Vermarkter angebunden ist. Nicht angehakte SSPs werden in der ID Landscape Map für deinen Vermarkter ausgegraut.</p>
+
+        <h3 style="color: #60a5fa; margin-top: 20px;">4. Änderungen speichern & veröffentlichen</h3>
+        <ol style="padding-left: 20px;">
+            <li>Klicke in der rechten Spalte auf den blauen Button <strong>Änderungen speichern & veröffentlichen</strong>.</li>
+            <li>Nach wenigen Sekunden erscheint die grüne Erfolgsmeldung mit dem exakten Dateipfad im BVDW-Repository.</li>
+            <li>Deine Daten sind damit sofort live im System gespeichert. Über <em>"OVK Landscape Map öffnen"</em> kannst du das Ergebnis direkt prüfen.</li>
+        </ol>
+
+        <div style="text-align: right; margin-top: 25px; border-top: 1px solid #333; padding-top: 15px;">
+            <button type="button" onclick="closeHelpModal()" style="background: #2563eb; color: #fff; padding: 10px 20px; border-radius: 4px; font-weight: bold; cursor: pointer;">Verstanden & schließen</button>
+        </div>
     </div>
 </div>
 
 <div class="header">
     <h1>Vermarkter Config Editor</h1>
     <div class="nav-links">
+        <button type="button" onclick="openHelpModal()" style="background: #374151; color: #fff; margin-left: 15px; padding: 6px 12px; font-size: 0.9em; border-radius: 4px; border: 1px solid #4b5563; cursor: pointer;">📖 Anleitung / Hilfe</button>
         <a href="index.html" target="_blank">OVK Landscape Map öffnen</a>
         <a href="core_editor.html" target="_blank">Core Editor öffnen</a>
     </div>
@@ -651,8 +697,18 @@ window.OVK_LANDSCAPE_CONFIG.vermarkter.push(${JSON.stringify(vObj, null, 2).repl
         btn.textContent = "Änderungen speichern & veröffentlichen";
     }
 
-    // Run on load
-    // window.onload = init; (aufgerufen durch Async-Loader)
+    // Modal Helper
+    function openHelpModal() {
+        document.getElementById('helpModal').style.display = 'flex';
+    }
+
+    function closeHelpModal() {
+        document.getElementById('helpModal').style.display = 'none';
+    }
+
+    window.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') closeHelpModal();
+    });
 </script>
 
 </body>

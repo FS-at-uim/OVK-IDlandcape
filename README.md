@@ -17,6 +17,12 @@ Durch Auswahl einer **Usecase**, eines **Data Partners** oder einer **DSP** werd
 
 In der Detailansicht (Info-Drawer) und in den Inventar-Icons (Desktop, Mobile, App, CTV) werden inventarspezifische ID-Abdeckungen (ID Coverage in %) und detaillierte Beschreibungen angezeigt.
 
+## Dokumentation & Anleitungen
+
+- 📘 **[Administrator-Handbuch (`docs/admin_guide.md`)](file:///c:/Users/fschenk/mein-webserver/Identifier/docs/admin_guide.md)**: Partner anlegen, pflegen & Passwörter in Cloudflare verwalten.
+- 📗 **[Partner-Anleitung (`docs/partner_guide.md`)](file:///c:/Users/fschenk/mein-webserver/Identifier/docs/partner_guide.md)**: Anleitung für Vermarkter & Data Partner zur Pflege ihrer Daten in der Config-UI.
+- ⚙️ **[Cloudflare Worker Setup (`docs/cloudflare_setup.md`)](file:///c:/Users/fschenk/mein-webserver/Identifier/docs/cloudflare_setup.md)**: Einrichtung & Konfiguration des sicheren Gatekeepers.
+
 ---
 
 ## Konfiguration (`config/`)
