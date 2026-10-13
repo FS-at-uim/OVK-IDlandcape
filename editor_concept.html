@@ -41,15 +41,16 @@
       padding-bottom: 60px;
     }
 
-    /* Top Header */
+    /* Top Header im Stil von tech.ovk.de */
     .portal-header {
-      background-color: var(--color-ovk-red);
+      background-color: #010f2d;
       color: #ffffff;
       height: 60px;
       display: flex;
       align-items: center;
       padding: 0 24px;
-      box-shadow: var(--shadow-md);
+      border-bottom: 2px solid var(--color-ovk-red);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
       position: sticky;
       top: 0;
       z-index: 100;
@@ -396,6 +397,35 @@
       transition: background 0.15s ease;
     }
     .btn-save:hover { background: #0f5c28; }
+
+    .nightly-hint-inline {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.8rem;
+      color: #64748b;
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 6px;
+      padding: 6px 12px;
+      max-width: 480px;
+      line-height: 1.35;
+    }
+    .nightly-hint-inline strong {
+      color: var(--color-ovk-blue);
+    }
+
+    .dsp-flyout-notice {
+      background: #fff8e6;
+      border: 1px solid #ffd591;
+      border-left: 3px solid #fa8c16;
+      border-radius: 4px;
+      padding: 8px 12px;
+      font-size: 0.8rem;
+      color: #873800;
+      margin-bottom: 10px;
+      line-height: 1.45;
+    }
   </style>
 </head>
 <body>
@@ -404,11 +434,12 @@
   <header class="portal-header">
     <div class="header-inner">
       <div class="logo-badge">
-        <span>OVK ID Landscape</span>
-        <span class="concept-pill">Prototyp: Konzept 1 + 3</span>
+        <span style="color: #fff; font-weight: 800;">OVK</span>
+        <span style="font-weight: 600; opacity: 0.9;">ID Landscape</span>
+        <span class="concept-pill" style="background: var(--color-ovk-red); color: #fff;">Config Portal</span>
       </div>
       <div class="user-info">
-        <span class="user-badge">👤 United Internet Media (Vermarkter)</span>
+        <span class="user-badge" style="background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.18);">👤 United Internet Media (Vermarkter)</span>
         <a href="editor.html" style="color: #fff; text-decoration: none; opacity: 0.8; font-size: 0.82rem;">Zurück</a>
       </div>
     </div>
@@ -416,14 +447,6 @@
 
   <!-- Hauptcontainer: Auf ergonomische 960px begrenzt -->
   <div class="container">
-
-    <!-- 🌙 Kompakter Nightly-Hinweis -->
-    <div class="nightly-banner">
-      <span style="font-size: 1.25rem;">🌙</span>
-      <div>
-        <strong>Hinweis zur Live-Schaltung:</strong> Gespeicherte Daten werden im zentralen BVDW-Repository gesichert und greifen in der Landscape Map automatisch <strong>über Nacht</strong>.
-      </div>
-    </div>
 
     <!-- 1. KARTE: BASISDATEN (Kompakt & geordnet) -->
     <div class="card">
@@ -442,11 +465,11 @@
         </div>
         <div class="form-group w-lg">
           <div style="display: flex; justify-content: space-between;">
-            <label for="v_desc">Kurzbeschreibung (Landscape-Kachel)</label>
+            <label for="v_desc">Kurzbeschreibung (wird in der Landscape so anzezeigt)</label>
             <span style="font-size: 0.75rem; color: var(--color-text-muted);" id="counter">43/65</span>
           </div>
           <input type="text" id="v_desc" maxlength="65" value="Digitalvermarkter von WEB.DE, GMX und 1&1." oninput="document.getElementById('counter').textContent = this.value.length + '/65'">
-          <div class="field-hint">Maximal 65 Zeichen für ein einheitliches Layout in der Landscape.</div>
+          <div class="field-hint">Maximal 65 Zeichen.</div>
         </div>
       </div>
     </div>
@@ -460,6 +483,7 @@
         </div>
         <span style="font-size: 0.8rem; color: var(--color-text-muted);">Reichweite in Prozent (0–100%)</span>
       </div>
+	  <div style="font-size: 0.85rem; color: var(--color-text-muted); margin-bottom: 8px;">In welchen Inventaren stellt ihr die genannten IDs im Programmatischen Ökosystem zur Verfügung und für wie viel % der Requests enthalten die entsprechende ID?</div>
 
       <table class="matrix-table">
         <thead>
@@ -469,7 +493,10 @@
             <th style="width: 130px;">Utiq</th>
             <th style="width: 140px;">netID via Utiq</th>
             <th style="width: 130px;">netID</th>
-            <th style="text-align: right;">DSP-Ausschlüsse</th>
+            <th style="text-align: right;">
+              DSP-Ausschlüsse 
+              <span title="Hier DSPs auswählen, wenn eine Weitergabe der ID durch die jeweilige DSP ausdrücklich ausgeschlossen werden soll." style="cursor: help; color: var(--color-text-muted); font-size: 0.85rem;">ℹ️</span>
+            </th>
           </tr>
         </thead>
         <tbody>
@@ -510,7 +537,10 @@
           <tr id="flyout-desktop-tr" style="display: none;">
             <td colspan="6" style="padding: 0 12px 14px 12px; background: #fafafa;">
               <div class="dsp-flyout" id="flyout-desktop" style="display: block;">
-                <div style="font-size: 0.8rem; font-weight: 700; color: #475569;">
+                <div class="dsp-flyout-notice">
+                  ℹ️ <strong>Wichtiger Hinweis:</strong> Wähle eine DSP hier nur dann aus, wenn du eine Weitergabe der ID durch diese DSP <strong>ausdrücklich ausschließt</strong>.
+                </div>
+                <div style="font-size: 0.8rem; font-weight: 700; color: #475569; margin-bottom: 6px;">
                   DSPs für Desktop ausschließen (Klick zum Umschalten):
                 </div>
                 <div class="dsp-chips-grid">
@@ -559,7 +589,10 @@
           <tr id="flyout-mobile-tr" style="display: none;">
             <td colspan="6" style="padding: 0 12px 14px 12px; background: #fafafa;">
               <div class="dsp-flyout" id="flyout-mobile" style="display: block;">
-                <div style="font-size: 0.8rem; font-weight: 700; color: #475569;">
+                <div class="dsp-flyout-notice">
+                  ℹ️ <strong>Wichtiger Hinweis:</strong> Wähle eine DSP hier nur dann aus, wenn du eine Weitergabe der ID durch diese DSP <strong>ausdrücklich ausschließt</strong>.
+                </div>
+                <div style="font-size: 0.8rem; font-weight: 700; color: #475569; margin-bottom: 6px;">
                   DSPs für Mobile Web ausschließen:
                 </div>
                 <div class="dsp-chips-grid">
@@ -620,7 +653,7 @@
       </div>
 
       <p style="font-size: 0.85rem; color: var(--color-text-muted); margin-bottom: 8px;">
-        Wähle alle Supply-Side-Plattformen aus, über die dein Vermarkter-Inventar angebunden ist:
+        Wähle alle Supply-Side-Plattformen aus, über die dein Vermarkter-Inventar angebunden ist und die genannten IDs übergeben werden:
       </p>
 
       <div class="chips-cloud" id="sspChipsCloud">
@@ -638,10 +671,14 @@
 
     <!-- SPEICHERN LEISTE -->
     <div class="save-bar">
-      <div>
+      <div style="display: flex; align-items: center; gap: 16px; flex-wrap: wrap;">
         <button type="button" class="btn-save" onclick="simulateSave()">
           💾 Änderungen für United Internet Media speichern
         </button>
+        <div class="nightly-hint-inline">
+          <span style="font-size: 1.1rem; flex-shrink: 0;">🌙</span>
+          <span><strong>Hinweis zur Live-Schaltung:</strong> Gespeicherte Daten werden im BVDW-Repository gesichert und greifen in der Landscape Map automatisch <strong>über Nacht</strong>.</span>
+        </div>
       </div>
       <div id="saveFeedback" style="font-size: 0.88rem; font-weight: 600; color: var(--color-success); display: none;">
         ✓ Erfolgreich im BVDW-Repository gespeichert! (Wird über Nacht live)
