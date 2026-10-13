@@ -280,6 +280,10 @@ export default {
 
       const body = await request.json();
       const {
+        authEmail: clientAuthEmail,
+        authRole: clientAuthRole,
+        userEmail,
+        userRole,
         email,
         username,
         vermarkterId,
@@ -299,20 +303,35 @@ export default {
         });
       }
 
-      const loginIdentifier = (email || username || inputPartnerId || vermarkterId || '').trim();
-      const loginIdentifierLower = loginIdentifier.toLowerCase();
-
+      let authenticatedUser = null;
       let isAdmin = false;
       let authRole = null;
       let authPartnerId = null;
       let authPartnerName = null;
       let authEmail = null;
 
+      // Caller-Identität ermitteln
+      const explicitCallerEmail = (clientAuthEmail || userEmail || '').trim().toLowerCase();
+      const requestedRole = (clientAuthRole || userRole || '').trim();
+
+      // Bei Login ist email/username/vermarkterId/inputPartnerId die Kennung.
+      // Bei Speicher-/Admin-Routen (POST /save, /admin/*) ist email im Body das Zielobjekt (z.B. neuer User),
+      // daher darf es dort nur als loginIdentifier verwendet werden, wenn keine explizite Caller-Email angegeben ist.
+      let loginIdentifier = '';
+      if (explicitCallerEmail) {
+        loginIdentifier = explicitCallerEmail;
+      } else if (url.pathname === '/login') {
+        loginIdentifier = (email || username || inputPartnerId || vermarkterId || '').trim();
+      } else {
+        loginIdentifier = (email || username || '').trim();
+      }
+      const loginIdentifierLower = loginIdentifier.toLowerCase();
+
       // 1. ZUERST: Authentifizierung über auth_registry.json im GitHub-Repo prüfen
       const rawAuthRegistry = await loadAuthRegistry();
       const authRegistry = getNormalizedRegistry(rawAuthRegistry);
 
-      // Fall A: Spezifischer Profil-Schlüssel wurde übergeben (nach Rollenauswahl)
+      // Fall A: Spezifischer Profil-Schlüssel wurde übergeben (nach Rollenauswahl oder aus Client-Payload)
       if (selectedProfileKey) {
         const parts = selectedProfileKey.split(':');
         const targetEmail = parts[0].toLowerCase();
@@ -323,13 +342,22 @@ export default {
         if (matchedUser) {
           const calculatedHash = await hashPassword(password, matchedUser.salt);
           if (calculatedHash === matchedUser.hash) {
-            const roleMatch = matchedUser.roles.find(r => r.role === targetRole && (!targetPartnerId || (r.partnerId || '').toLowerCase() === targetPartnerId.toLowerCase()));
-            if (roleMatch) {
-              authRole = roleMatch.role;
-              authPartnerId = roleMatch.partnerId || (authRole !== 'admin' ? matchedUser.email : 'admin');
+            authenticatedUser = matchedUser;
+            const roleMatch = matchedUser.roles.find(r =>
+              r.role === targetRole && (
+                targetRole === 'admin' ||
+                !targetPartnerId ||
+                targetPartnerId === 'admin' ||
+                (r.partnerId || '').toLowerCase() === targetPartnerId.toLowerCase()
+              )
+            );
+            const activeRole = roleMatch || (requestedRole ? matchedUser.roles.find(r => r.role === requestedRole) : null) || matchedUser.roles[0];
+            if (activeRole) {
+              authRole = activeRole.role;
+              authPartnerId = activeRole.partnerId || (authRole !== 'admin' ? matchedUser.email : 'admin');
               authPartnerName = matchedUser.name;
               authEmail = matchedUser.email;
-              isAdmin = (authRole === 'admin');
+              isAdmin = (authRole === 'admin') || matchedUser.roles.some(r => r.role === 'admin');
             }
           } else {
             return new Response(JSON.stringify({ error: 'Falsches Passwort für dieses Profil' }), {
@@ -337,23 +365,37 @@ export default {
               headers: { ...corsHeaders, 'Content-Type': 'application/json' }
             });
           }
+        } else {
+          // Prüfen, ob Master Admin via selectedProfileKey angesprochen wurde
+          const isMasterAdminCall = (targetEmail === 'admin' || targetEmail === (env.ADMIN_EMAIL || 'admin@ovk.de').toLowerCase() || targetRole === 'admin');
+          if (isMasterAdminCall && env.ADMIN_PASSWORD && password === env.ADMIN_PASSWORD) {
+            isAdmin = true;
+            authRole = 'admin';
+            authPartnerId = 'admin';
+            authPartnerName = 'Master Administrator';
+            authEmail = env.ADMIN_EMAIL || 'admin@ovk.de';
+          }
         }
       }
 
-      // Fall B: Normale Anmeldung mit Kennung (E-Mail oder Partner-ID)
+      // Fall B: Normale Kennung (E-Mail oder Partner-ID)
       if (!authRole && loginIdentifierLower) {
         let matchedUser = authRegistry.partners[loginIdentifierLower];
         if (!matchedUser) {
           matchedUser = Object.values(authRegistry.partners).find(u => (u.email || '').toLowerCase() === loginIdentifierLower);
         }
-        if (!matchedUser) {
+        if (!matchedUser && url.pathname === '/login') {
           matchedUser = Object.values(authRegistry.partners).find(u => (u.roles || []).some(r => (r.partnerId || '').toLowerCase() === loginIdentifierLower));
         }
 
         if (matchedUser) {
           const calculatedHash = await hashPassword(password, matchedUser.salt);
           if (calculatedHash === matchedUser.hash) {
-            if (matchedUser.roles.length > 1) {
+            authenticatedUser = matchedUser;
+
+            // WICHTIG: Profilauswahl (requireProfileSelection) darf NUR bei /login ausgelöst werden,
+            // NIEMALS bei Speicheraktionen (/save, /admin/...)!
+            if (url.pathname === '/login' && matchedUser.roles.length > 1) {
               return new Response(JSON.stringify({
                 success: true,
                 requireProfileSelection: true,
@@ -371,13 +413,20 @@ export default {
               });
             }
 
-            if (matchedUser.roles.length === 1) {
-              const single = matchedUser.roles[0];
-              authRole = single.role;
-              authPartnerId = single.partnerId || (single.role !== 'admin' ? matchedUser.email : 'admin');
+            let matchedRoleObj = null;
+            if (requestedRole) {
+              matchedRoleObj = matchedUser.roles.find(r => r.role === requestedRole);
+            }
+            if (!matchedRoleObj && matchedUser.roles.length > 0) {
+              matchedRoleObj = matchedUser.roles[0];
+            }
+
+            if (matchedRoleObj) {
+              authRole = matchedRoleObj.role;
+              authPartnerId = matchedRoleObj.partnerId || (matchedRoleObj.role !== 'admin' ? matchedUser.email : 'admin');
               authPartnerName = matchedUser.name;
               authEmail = matchedUser.email || loginIdentifier;
-              isAdmin = (authRole === 'admin');
+              isAdmin = (authRole === 'admin') || matchedUser.roles.some(r => r.role === 'admin');
             } else {
               return new Response(JSON.stringify({ error: 'Diesem Benutzer wurden keine Rollen zugewiesen' }), {
                 status: 401,
@@ -452,7 +501,10 @@ export default {
         for (const [accId, accData] of Object.entries(authRegistry.partners)) {
           const calculatedHash = await hashPassword(password, accData.salt);
           if (calculatedHash === accData.hash) {
-            if (accData.roles && accData.roles.length > 1) {
+            authenticatedUser = accData;
+
+            // WICHTIG: Profilauswahl darf NUR bei /login zurückgegeben werden!
+            if (url.pathname === '/login' && accData.roles && accData.roles.length > 1) {
               return new Response(JSON.stringify({
                 success: true,
                 requireProfileSelection: true,
@@ -469,13 +521,21 @@ export default {
                 headers: { ...corsHeaders, 'Content-Type': 'application/json' }
               });
             }
-            const single = accData.roles && accData.roles[0];
-            if (single) {
-              authRole = single.role;
+
+            let matchedRoleObj = null;
+            if (requestedRole) {
+              matchedRoleObj = (accData.roles || []).find(r => r.role === requestedRole);
+            }
+            if (!matchedRoleObj && accData.roles && accData.roles.length > 0) {
+              matchedRoleObj = accData.roles[0];
+            }
+
+            if (matchedRoleObj) {
+              authRole = matchedRoleObj.role;
               authPartnerName = accData.name || accId;
-              authPartnerId = single.partnerId || (single.role !== 'admin' ? accId : 'admin');
+              authPartnerId = matchedRoleObj.partnerId || (matchedRoleObj.role !== 'admin' ? accId : 'admin');
               authEmail = accData.email || accId;
-              isAdmin = (authRole === 'admin');
+              isAdmin = (authRole === 'admin') || (accData.roles || []).some(r => r.role === 'admin');
               break;
             }
           }
@@ -489,11 +549,14 @@ export default {
         });
       }
 
+      // Berechtigungsstatus für Admin-Aktionen ermitteln
+      const userHasAdminRole = isAdmin || (authenticatedUser && authenticatedUser.roles && authenticatedUser.roles.some(r => r.role === 'admin'));
+
       // -------------------------------------------------------------
       // Route: POST /admin/save-partner-auth (Admin legt Benutzer an / aktualisiert Rollen & Passwort)
       // -------------------------------------------------------------
       if (url.pathname === '/admin/save-partner-auth') {
-        if (!isAdmin) {
+        if (!userHasAdminRole) {
           return new Response(JSON.stringify({ error: 'Nur Admins können Logins verwalten' }), {
             status: 403,
             headers: { ...corsHeaders, 'Content-Type': 'application/json' }
@@ -584,7 +647,7 @@ export default {
       // Route: POST /admin/delete-partner-auth (Admin löscht Benutzer-Account)
       // -------------------------------------------------------------
       if (url.pathname === '/admin/delete-partner-auth') {
-        if (!isAdmin) {
+        if (!userHasAdminRole) {
           return new Response(JSON.stringify({ error: 'Nur Admins können Partner-Logins löschen' }), {
             status: 403,
             headers: { ...corsHeaders, 'Content-Type': 'application/json' }
@@ -637,7 +700,7 @@ export default {
         ]);
 
         let vermarkterFiles = [];
-        if (isAdmin || authRole === 'admin') {
+        if (userHasAdminRole || authRole === 'admin') {
           vermarkterFiles = await fetchAllVermarkterFiles();
         } else if (authRole === 'vermarkter' && authPartnerId) {
           try {
@@ -649,7 +712,7 @@ export default {
         }
 
         // Sanitized Benutzer- und Partner-Liste für Admin-Oberfläche (ohne Hashes & Salts)
-        const sanitizedAuthPartners = isAdmin
+        const sanitizedAuthPartners = userHasAdminRole
           ? Object.entries(authRegistry.partners).map(([id, u]) => ({
               id,
               email: u.email || id,
@@ -663,7 +726,7 @@ export default {
 
         return new Response(JSON.stringify({
           success: true,
-          isAdmin,
+          isAdmin: userHasAdminRole,
           role: authRole,
           partnerId: authPartnerId,
           partnerName: authPartnerName,
@@ -680,7 +743,7 @@ export default {
             relativePath: `config/vermarkter/${authPartnerId}.js`,
             fullPath: basePath.length > 0 ? `${basePath}/config/vermarkter/${authPartnerId}.js` : `config/vermarkter/${authPartnerId}.js`
           } : null,
-          allVermarkter: isAdmin ? vermarkterFiles.map(v => ({ id: v.id, relativePath: v.relativePath, fullPath: v.fullPath })) : undefined,
+          allVermarkter: userHasAdminRole ? vermarkterFiles.map(v => ({ id: v.id, relativePath: v.relativePath, fullPath: v.fullPath })) : undefined,
           authPartners: sanitizedAuthPartners,
           configs: {
             core: coreFile,
@@ -700,14 +763,14 @@ export default {
       const targetEntityId = inputPartnerId || authPartnerId;
 
       // Berechtigungsprüfungen für Speicheraktionen
-      if (effectiveTarget === 'core' && !isAdmin) {
+      if (effectiveTarget === 'core' && !userHasAdminRole) {
         return new Response(JSON.stringify({ error: 'Nur Admins können die gesamte core.js bearbeiten' }), {
           status: 403,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         });
       }
 
-      if (effectiveTarget === 'data_partners' && !isAdmin) {
+      if (effectiveTarget === 'data_partners' && !userHasAdminRole) {
         return new Response(JSON.stringify({ error: 'Nur Admins können die gesamte data_partners.js bearbeiten' }), {
           status: 403,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }
@@ -715,8 +778,16 @@ export default {
       }
 
       if (effectiveTarget === 'vermarkter') {
-        if (!isAdmin && authPartnerId !== targetEntityId) {
-          return new Response(JSON.stringify({ error: 'Keine Berechtigung für diesen Vermarkter' }), {
+        const canEdit = userHasAdminRole || (
+          authRole === 'vermarkter' && authPartnerId && targetEntityId &&
+          authPartnerId.toLowerCase() === targetEntityId.toLowerCase()
+        ) || (
+          authenticatedUser && authenticatedUser.roles && authenticatedUser.roles.some(r =>
+            r.role === 'vermarkter' && (r.partnerId || '').toLowerCase() === targetEntityId.toLowerCase()
+          )
+        );
+        if (!canEdit) {
+          return new Response(JSON.stringify({ error: `Keine Berechtigung für Vermarkter "${targetEntityId}"` }), {
             status: 403,
             headers: { ...corsHeaders, 'Content-Type': 'application/json' }
           });
@@ -724,8 +795,16 @@ export default {
       }
 
       if (effectiveTarget === 'ssp') {
-        if (!isAdmin && (authRole !== 'ssp' || authPartnerId !== targetEntityId)) {
-          return new Response(JSON.stringify({ error: 'Keine Berechtigung für diesen SSP' }), {
+        const canEdit = userHasAdminRole || (
+          authRole === 'ssp' && authPartnerId && targetEntityId &&
+          authPartnerId.toLowerCase() === targetEntityId.toLowerCase()
+        ) || (
+          authenticatedUser && authenticatedUser.roles && authenticatedUser.roles.some(r =>
+            r.role === 'ssp' && (r.partnerId || '').toLowerCase() === targetEntityId.toLowerCase()
+          )
+        );
+        if (!canEdit) {
+          return new Response(JSON.stringify({ error: `Keine Berechtigung für SSP "${targetEntityId}"` }), {
             status: 403,
             headers: { ...corsHeaders, 'Content-Type': 'application/json' }
           });
@@ -733,8 +812,16 @@ export default {
       }
 
       if (effectiveTarget === 'dsp') {
-        if (!isAdmin && (authRole !== 'dsp' || authPartnerId !== targetEntityId)) {
-          return new Response(JSON.stringify({ error: 'Keine Berechtigung für diesen DSP' }), {
+        const canEdit = userHasAdminRole || (
+          authRole === 'dsp' && authPartnerId && targetEntityId &&
+          authPartnerId.toLowerCase() === targetEntityId.toLowerCase()
+        ) || (
+          authenticatedUser && authenticatedUser.roles && authenticatedUser.roles.some(r =>
+            r.role === 'dsp' && (r.partnerId || '').toLowerCase() === targetEntityId.toLowerCase()
+          )
+        );
+        if (!canEdit) {
+          return new Response(JSON.stringify({ error: `Keine Berechtigung für DSP "${targetEntityId}"` }), {
             status: 403,
             headers: { ...corsHeaders, 'Content-Type': 'application/json' }
           });
@@ -742,8 +829,16 @@ export default {
       }
 
       if (effectiveTarget === 'data_partner') {
-        if (!isAdmin && (authRole !== 'data_partner' || authPartnerId !== targetEntityId)) {
-          return new Response(JSON.stringify({ error: 'Keine Berechtigung für diesen Data Partner' }), {
+        const canEdit = userHasAdminRole || (
+          authRole === 'data_partner' && authPartnerId && targetEntityId &&
+          authPartnerId.toLowerCase() === targetEntityId.toLowerCase()
+        ) || (
+          authenticatedUser && authenticatedUser.roles && authenticatedUser.roles.some(r =>
+            r.role === 'data_partner' && (r.partnerId || '').toLowerCase() === targetEntityId.toLowerCase()
+          )
+        );
+        if (!canEdit) {
+          return new Response(JSON.stringify({ error: `Keine Berechtigung für Data Partner "${targetEntityId}"` }), {
             status: 403,
             headers: { ...corsHeaders, 'Content-Type': 'application/json' }
           });

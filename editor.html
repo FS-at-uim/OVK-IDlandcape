@@ -1252,6 +1252,21 @@
     let activeDSPId = null;
     let activeDPId = null;
 
+    // Hilfsfunktion: Einheitlicher Auth-Payload für alle Worker-Schreibanfragen
+    function getAuthPayload(extra = {}) {
+      const profileKey = (currentUser && currentUser.email && currentUser.role)
+        ? `${currentUser.email.toLowerCase()}:${currentUser.role}${currentUser.id ? ':' + currentUser.id : ''}`
+        : undefined;
+
+      return {
+        password: sessionPassword,
+        authEmail: currentUser ? currentUser.email : undefined,
+        authRole: currentUser ? currentUser.role : undefined,
+        selectedProfileKey: profileKey,
+        ...extra
+      };
+    }
+
     // URL-Parameter
     const urlParams = new URLSearchParams(window.location.search);
     const urlId = urlParams.get('id');
@@ -1887,16 +1902,15 @@
         const res = await fetch(WORKER_URL + "/save", {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            password: sessionPassword,
+          body: JSON.stringify(getAuthPayload({
             target: 'vermarkter',
             partnerId: vObj.id,
             code
-          })
+          }))
         });
 
-        const resData = await res.json();
-        if (res.ok) {
+        const resData = await res.json().catch(() => ({}));
+        if (res.ok && resData.success && !resData.requireProfileSelection) {
           statusEl.className = 'status-feedback success';
           statusEl.textContent = `✓ Erfolgreich im BVDW-Repository gespeichert!`;
           statusEl.style.display = 'inline-block';
@@ -1971,16 +1985,15 @@
         const res = await fetch(WORKER_URL + "/save", {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            password: sessionPassword,
+          body: JSON.stringify(getAuthPayload({
             target: 'ssp',
             partnerId: sspId,
             data: sspData
-          })
+          }))
         });
 
-        const resData = await res.json();
-        if (res.ok) {
+        const resData = await res.json().catch(() => ({}));
+        if (res.ok && resData.success && !resData.requireProfileSelection) {
           statusEl.className = 'status-feedback success';
           statusEl.textContent = `✓ SSP ${sspId} erfolgreich im Ziel-Repository gespeichert!`;
           statusEl.style.display = 'inline-block';
@@ -2062,16 +2075,15 @@
         const res = await fetch(WORKER_URL + "/save", {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            password: sessionPassword,
+          body: JSON.stringify(getAuthPayload({
             target: 'dsp',
             partnerId: dspId,
             data: dspData
-          })
+          }))
         });
 
-        const resData = await res.json();
-        if (res.ok) {
+        const resData = await res.json().catch(() => ({}));
+        if (res.ok && resData.success && !resData.requireProfileSelection) {
           statusEl.className = 'status-feedback success';
           statusEl.textContent = `✓ DSP ${dspId} erfolgreich im Ziel-Repository gespeichert!`;
           statusEl.style.display = 'inline-block';
@@ -2153,16 +2165,15 @@
         const res = await fetch(WORKER_URL + "/save", {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            password: sessionPassword,
+          body: JSON.stringify(getAuthPayload({
             target: 'data_partner',
             partnerId: dpId,
             data: dpData
-          })
+          }))
         });
 
-        const resData = await res.json();
-        if (res.ok) {
+        const resData = await res.json().catch(() => ({}));
+        if (res.ok && resData.success && !resData.requireProfileSelection) {
           statusEl.className = 'status-feedback success';
           statusEl.textContent = `✓ Data Partner ${dpId} erfolgreich im Ziel-Repository gespeichert!`;
           statusEl.style.display = 'inline-block';
@@ -2207,11 +2218,19 @@
 
     async function saveEntireDataPartnersFile() {
       const code = `// OVK ID Landscape Map - Data Partner Konfigurationsdaten\n\nif (!window.OVK_LANDSCAPE_CONFIG) {\n  window.OVK_LANDSCAPE_CONFIG = {};\n}\n\nwindow.OVK_LANDSCAPE_CONFIG.dataPartners = ${JSON.stringify(CONFIG.dataPartners, null, 2)};\n`;
-      await fetch(WORKER_URL + "/save", {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ password: sessionPassword, target: 'data_partners', code })
-      });
+      try {
+        const res = await fetch(WORKER_URL + "/save", {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(getAuthPayload({ target: 'data_partners', code }))
+        });
+        const resData = await res.json().catch(() => ({}));
+        if (!res.ok || !resData.success || resData.requireProfileSelection) {
+          alert('Fehler beim Aktualisieren der data_partners.js: ' + (resData.error || 'Speichern fehlgeschlagen'));
+        }
+      } catch (e) {
+        alert('Netzwerkfehler: ' + e.message);
+      }
     }
 
     // -----------------------------------------------------------------
@@ -2249,10 +2268,10 @@
         const res = await fetch(WORKER_URL + "/save", {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ password: sessionPassword, target: 'core', code })
+          body: JSON.stringify(getAuthPayload({ target: 'core', code }))
         });
-        const data = await res.json();
-        if (res.ok) {
+        const data = await res.json().catch(() => ({}));
+        if (res.ok && data.success && !data.requireProfileSelection) {
           statusEl.className = 'status-feedback success';
           statusEl.textContent = '✓ Core-Konfiguration erfolgreich im Repository aktualisiert!';
           statusEl.style.display = 'inline-block';
@@ -2487,17 +2506,16 @@
         const res = await fetch(WORKER_URL + "/admin/save-partner-auth", {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            password: sessionPassword,
+          body: JSON.stringify(getAuthPayload({
             email: emailVal,
             name: nameVal,
             roles: selectedRoles,
             newPassword: pwdVal || undefined
-          })
+          }))
         });
 
-        const data = await res.json();
-        if (res.ok) {
+        const data = await res.json().catch(() => ({}));
+        if (res.ok && data.success && !data.requireProfileSelection) {
           alert(`✓ Benutzer "${emailVal}" mit ${selectedRoles.length} Rolle(n) erfolgreich gespeichert!`);
           
           const cleanEmail = emailVal.toLowerCase();
@@ -2537,15 +2555,14 @@
         const res = await fetch(WORKER_URL + "/admin/delete-partner-auth", {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            password: sessionPassword,
+          body: JSON.stringify(getAuthPayload({
             email: userKey,
             targetPartnerId: userKey
-          })
+          }))
         });
 
-        const data = await res.json();
-        if (res.ok) {
+        const data = await res.json().catch(() => ({}));
+        if (res.ok && data.success && !data.requireProfileSelection) {
           authPartnersList.splice(idx, 1);
           renderAuthTable();
           resetAuthForm();
