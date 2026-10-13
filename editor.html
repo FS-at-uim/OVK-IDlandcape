@@ -1072,51 +1072,108 @@
         <!-- Anlege- / Bearbeitungsmaske -->
         <div style="background: #f8fafc; border: 1px solid var(--color-border); border-radius: 8px; padding: 18px 20px; margin-bottom: 22px;">
           <h3 style="font-size: 0.98rem; font-weight: 700; margin-bottom: 14px;" id="authFormTitle">Neuen Benutzer / Admin anlegen</h3>
-          <input type="hidden" id="auth_profile_key" value="">
+          <input type="hidden" id="auth_edit_mode" value="">
 
           <div class="form-row">
             <div class="form-group w-md">
               <label for="auth_email">E-Mail-Adresse (Login-Kennung)</label>
               <input type="text" id="auth_email" placeholder="z. B. friedrich.schenk@uim.de">
-              <div class="field-hint">Dient dem Administrator oder Partner als Login-Kennung.</div>
+              <div class="field-hint">Zentrale Login-Kennung für diesen Benutzer.</div>
             </div>
 
-            <div class="form-group w-sm">
-              <label for="auth_role">Rolle</label>
-              <select id="auth_role" onchange="toggleAuthPartnerIdField()">
-                <option value="admin">👑 Administrator (Vollzugriff)</option>
-                <option value="vermarkter">🏷️ Vermarkter</option>
-                <option value="ssp">⚡ Supply-Side-Plattform</option>
-                <option value="dsp">🎯 Demand-Side-Plattform</option>
-                <option value="data_partner">📊 Data Partner</option>
-              </select>
-            </div>
-
-            <div class="form-group w-md" id="authPartnerIdGroup" style="display: none;">
-              <label for="auth_partner_id">Zugehörige Partner-ID</label>
-              <input type="text" id="auth_partner_id" placeholder="z. B. uim, magnite, ttd">
-              <div class="field-hint">Muss mit der ID des zugeordneten Partners übereinstimmen.</div>
-            </div>
-          </div>
-
-          <div class="form-row">
             <div class="form-group w-md">
               <label for="auth_name">Vollständiger Name / Organisation</label>
-              <input type="text" id="auth_name" placeholder="z. B. Friedrich Schenk oder UIM Admin">
+              <input type="text" id="auth_name" placeholder="z. B. Friedrich Schenk">
+              <div class="field-hint">Anzeigename im Portal und im Profil-Picker.</div>
             </div>
 
             <div class="form-group w-md">
-              <label for="auth_password">Passwort</label>
+              <label for="auth_password">Zentrales Passwort</label>
               <div style="display: flex; gap: 6px;">
                 <input type="text" id="auth_password" placeholder="Passwort vergeben">
                 <button type="button" class="btn btn-secondary" onclick="generateRandomPassword()" style="white-space: nowrap; font-size: 0.8rem;">🎲 Generieren</button>
+              </div>
+              <div class="field-hint" id="authPasswordHint">Gilt für alle Rollen dieser E-Mail. Beim Bearbeiten leer lassen, um aktuelles Passwort zu behalten.</div>
+            </div>
+          </div>
+
+          <!-- Rollen & Berechtigungs-Zuweisung direkt für diese E-Mail -->
+          <div style="margin: 16px 0; padding: 14px 16px; background: #ffffff; border: 1px solid var(--color-border); border-radius: 8px;">
+            <div style="font-weight: 700; font-size: 0.92rem; color: #1e293b; margin-bottom: 4px;">
+              Zugeordnete Rollen für diese E-Mail-Adresse
+            </div>
+            <div style="font-size: 0.8rem; color: var(--color-text-muted); margin-bottom: 12px;">
+              Wähle alle Rollen aus, die dieser E-Mail zugewiesen sein sollen. Besitzt der Account mehr als eine Rolle, erscheint beim Login der Profil-Picker.
+            </div>
+
+            <div style="display: flex; flex-direction: column; gap: 10px;">
+              <!-- 1. Administrator -->
+              <label style="display: flex; align-items: center; gap: 10px; font-weight: 600; cursor: pointer; padding: 8px 12px; border-radius: 6px; background: #f8fafc; border: 1px solid var(--color-border);">
+                <input type="checkbox" id="auth_check_admin" style="width: 18px; height: 18px; cursor: pointer;">
+                <span style="font-size: 1.15rem;">👑</span>
+                <div>
+                  <span style="color: #6d28d9; font-weight: 700;">Administrator</span>
+                  <span style="font-size: 0.8rem; color: var(--color-text-muted); font-weight: 400; margin-left: 6px;">Vollzugriff auf alle Partner, Core-Kataloge & Benutzerverwaltung</span>
+                </div>
+              </label>
+
+              <!-- 2. Vermarkter -->
+              <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 8px 12px; border-radius: 6px; background: #f8fafc; border: 1px solid var(--color-border);">
+                <label style="display: flex; align-items: center; gap: 10px; font-weight: 600; cursor: pointer; min-width: 160px;">
+                  <input type="checkbox" id="auth_check_vermarkter" onchange="toggleAuthRoleDropdown('vermarkter')" style="width: 18px; height: 18px; cursor: pointer;">
+                  <span style="font-size: 1.15rem;">🏷️</span>
+                  <span style="color: #047857; font-weight: 700;">Vermarkter</span>
+                </label>
+                <div id="auth_wrap_vermarkter" style="display: none; align-items: center; gap: 8px; margin-left: auto;">
+                  <span style="font-size: 0.82rem; color: var(--color-text-muted);">Partner:</span>
+                  <select id="auth_select_vermarkter" style="padding: 4px 8px; font-size: 0.85rem; min-width: 200px;"></select>
+                </div>
+              </div>
+
+              <!-- 3. SSP -->
+              <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 8px 12px; border-radius: 6px; background: #f8fafc; border: 1px solid var(--color-border);">
+                <label style="display: flex; align-items: center; gap: 10px; font-weight: 600; cursor: pointer; min-width: 160px;">
+                  <input type="checkbox" id="auth_check_ssp" onchange="toggleAuthRoleDropdown('ssp')" style="width: 18px; height: 18px; cursor: pointer;">
+                  <span style="font-size: 1.15rem;">⚡</span>
+                  <span style="color: #004bb4; font-weight: 700;">SSP</span>
+                </label>
+                <div id="auth_wrap_ssp" style="display: none; align-items: center; gap: 8px; margin-left: auto;">
+                  <span style="font-size: 0.82rem; color: var(--color-text-muted);">Partner:</span>
+                  <select id="auth_select_ssp" style="padding: 4px 8px; font-size: 0.85rem; min-width: 200px;"></select>
+                </div>
+              </div>
+
+              <!-- 4. DSP -->
+              <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 8px 12px; border-radius: 6px; background: #f8fafc; border: 1px solid var(--color-border);">
+                <label style="display: flex; align-items: center; gap: 10px; font-weight: 600; cursor: pointer; min-width: 160px;">
+                  <input type="checkbox" id="auth_check_dsp" onchange="toggleAuthRoleDropdown('dsp')" style="width: 18px; height: 18px; cursor: pointer;">
+                  <span style="font-size: 1.15rem;">🎯</span>
+                  <span style="color: #b45309; font-weight: 700;">DSP</span>
+                </label>
+                <div id="auth_wrap_dsp" style="display: none; align-items: center; gap: 8px; margin-left: auto;">
+                  <span style="font-size: 0.82rem; color: var(--color-text-muted);">Partner:</span>
+                  <select id="auth_select_dsp" style="padding: 4px 8px; font-size: 0.85rem; min-width: 200px;"></select>
+                </div>
+              </div>
+
+              <!-- 5. Data Partner -->
+              <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 8px 12px; border-radius: 6px; background: #f8fafc; border: 1px solid var(--color-border);">
+                <label style="display: flex; align-items: center; gap: 10px; font-weight: 600; cursor: pointer; min-width: 160px;">
+                  <input type="checkbox" id="auth_check_data_partner" onchange="toggleAuthRoleDropdown('data_partner')" style="width: 18px; height: 18px; cursor: pointer;">
+                  <span style="font-size: 1.15rem;">📊</span>
+                  <span style="color: #be185d; font-weight: 700;">Data Partner</span>
+                </label>
+                <div id="auth_wrap_data_partner" style="display: none; align-items: center; gap: 8px; margin-left: auto;">
+                  <span style="font-size: 0.82rem; color: var(--color-text-muted);">Partner:</span>
+                  <select id="auth_select_data_partner" style="padding: 4px 8px; font-size: 0.85rem; min-width: 200px;"></select>
+                </div>
               </div>
             </div>
           </div>
 
           <div style="display: flex; gap: 8px; margin-top: 10px;">
             <button type="button" class="btn btn-primary" onclick="submitPartnerAuth()">
-              💾 Benutzer speichern
+              💾 Benutzer & Rollen speichern
             </button>
             <button type="button" class="btn btn-secondary" onclick="resetAuthForm()">
               Zurücksetzen
@@ -1131,14 +1188,13 @@
             <tr>
               <th>E-Mail / Login</th>
               <th>Name</th>
-              <th>Rolle</th>
-              <th>Zugeordneter Partner</th>
+              <th>Zugeordnete Rollen & Partner</th>
               <th>Zuletzt geändert</th>
               <th style="text-align: right;">Aktionen</th>
             </tr>
           </thead>
           <tbody id="authTableBody">
-            <tr><td colspan="6" style="text-align: center; color: var(--color-text-muted); padding: 18px;">Keine Benutzer hinterlegt.</td></tr>
+            <tr><td colspan="5" style="text-align: center; color: var(--color-text-muted); padding: 18px;">Keine Benutzer hinterlegt.</td></tr>
           </tbody>
         </table>
       </div>
@@ -1516,6 +1572,7 @@
       } else if (tabKey === 'authRegistry') {
         document.querySelectorAll('.tab-item')[5].classList.add('active');
         document.getElementById('sectionAuthRegistry').style.display = 'block';
+        populateAuthRoleDropdowns();
         renderAuthTable();
       }
     }
@@ -1552,6 +1609,8 @@
         opt.value = p.id; opt.textContent = `${p.name} (${p.id})`;
         dpSel.appendChild(opt);
       });
+
+      populateAuthRoleDropdowns();
     }
 
     // -----------------------------------------------------------------
@@ -2210,81 +2269,174 @@
     }
 
     // -----------------------------------------------------------------
-    // BENUTZER- & PARTNER-LOGINS (MULTI-ADMIN VIA E-MAIL)
+    // BENUTZER- & ROLLEN-VERWALTUNG (ZENTRAL PRO E-MAIL)
     // -----------------------------------------------------------------
+    function populateAuthRoleDropdowns() {
+      // 1. Vermarkter
+      const vSelect = document.getElementById('auth_select_vermarkter');
+      if (vSelect) {
+        const curVal = vSelect.value;
+        vSelect.innerHTML = '';
+        (CONFIG.vermarkter || []).forEach(v => {
+          const opt = document.createElement('option');
+          opt.value = v.id;
+          opt.textContent = `${v.name || v.id} (${v.id})`;
+          vSelect.appendChild(opt);
+        });
+        if (curVal) vSelect.value = curVal;
+      }
+      // 2. SSPs
+      const sspSelect = document.getElementById('auth_select_ssp');
+      if (sspSelect) {
+        const curVal = sspSelect.value;
+        sspSelect.innerHTML = '';
+        (CONFIG.ssps || []).forEach(s => {
+          const opt = document.createElement('option');
+          opt.value = s.id;
+          opt.textContent = `${s.name || s.id} (${s.id})`;
+          sspSelect.appendChild(opt);
+        });
+        if (curVal) sspSelect.value = curVal;
+      }
+      // 3. DSPs
+      const dspSelect = document.getElementById('auth_select_dsp');
+      if (dspSelect) {
+        const curVal = dspSelect.value;
+        dspSelect.innerHTML = '';
+        (CONFIG.dsps || []).forEach(d => {
+          const opt = document.createElement('option');
+          opt.value = d.id;
+          opt.textContent = `${d.name || d.id} (${d.id})`;
+          dspSelect.appendChild(opt);
+        });
+        if (curVal) dspSelect.value = curVal;
+      }
+      // 4. Data Partners
+      const dpSelect = document.getElementById('auth_select_data_partner');
+      if (dpSelect) {
+        const curVal = dpSelect.value;
+        dpSelect.innerHTML = '';
+        (CONFIG.dataPartners || []).forEach(p => {
+          const opt = document.createElement('option');
+          opt.value = p.id;
+          opt.textContent = `${p.name || p.id} (${p.id})`;
+          dpSelect.appendChild(opt);
+        });
+        if (curVal) dpSelect.value = curVal;
+      }
+    }
+
+    function toggleAuthRoleDropdown(roleKey) {
+      const checkbox = document.getElementById(`auth_check_${roleKey}`);
+      const wrap = document.getElementById(`auth_wrap_${roleKey}`);
+      if (checkbox && wrap) {
+        wrap.style.display = checkbox.checked ? 'inline-flex' : 'none';
+      }
+    }
+
     function renderAuthTable() {
       const tbody = document.getElementById('authTableBody');
       tbody.innerHTML = '';
 
       if (!authPartnersList || authPartnersList.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: var(--color-text-muted); padding: 18px;">Keine Benutzer-Accounts hinterlegt.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: var(--color-text-muted); padding: 18px;">Keine Benutzer-Accounts hinterlegt.</td></tr>';
         return;
       }
 
-      authPartnersList.forEach((p, idx) => {
+      authPartnersList.forEach((u, idx) => {
         const tr = document.createElement('tr');
-        const roleClass = `role-${p.role}`;
-        const updatedDate = p.updatedAt ? new Date(p.updatedAt).toLocaleString('de-DE') : '-';
-        const displayLogin = p.email || p.id;
-        const assignedPartner = p.partnerId ? `<code>${p.partnerId}</code>` : (p.role === 'admin' ? '<em>Vollzugriff (Alle)</em>' : '-');
+        const updatedDate = u.updatedAt ? new Date(u.updatedAt).toLocaleString('de-DE') : '-';
+        const displayLogin = u.email || u.id;
+
+        // Rollen-Badges zusammenstellen
+        const rolesList = Array.isArray(u.roles) && u.roles.length > 0
+          ? u.roles
+          : [{ role: u.role || 'admin', partnerId: u.partnerId }];
+
+        const badgesHtml = rolesList.map(r => {
+          const roleClass = `role-${r.role}`;
+          let label = r.role.toUpperCase();
+          if (r.role === 'admin') label = '👑 Admin';
+          else if (r.partnerId) label = `${r.role}: ${r.partnerId.toUpperCase()}`;
+          return `<span class="role-badge ${roleClass}" style="margin-right: 4px; margin-bottom: 2px;">${label}</span>`;
+        }).join(' ');
 
         tr.innerHTML = `
           <td><strong><code>${displayLogin}</code></strong></td>
-          <td>${p.name || displayLogin}</td>
-          <td><span class="role-badge ${roleClass}">${p.role}</span></td>
-          <td>${assignedPartner}</td>
+          <td>${u.name || displayLogin}</td>
+          <td>${badgesHtml}</td>
           <td style="color: var(--color-text-muted); font-size: 0.82rem;">${updatedDate}</td>
-          <td style="text-align: right;">
-            <button type="button" class="btn btn-secondary" style="font-size: 0.78rem; padding: 4px 8px;" onclick="editPartnerAuthByIndex(${idx})">🔑 Ändern</button>
-            <button type="button" class="btn btn-danger" style="font-size: 0.78rem; padding: 4px 8px; margin-left: 4px;" onclick="deletePartnerAuthByIndex(${idx})">🗑️ Löschen</button>
+          <td style="text-align: right; white-space: nowrap;">
+            <button type="button" class="btn btn-secondary" style="font-size: 0.78rem; padding: 4px 8px;" onclick="editUserAuthByIndex(${idx})">🔑 Bearbeiten</button>
+            <button type="button" class="btn btn-danger" style="font-size: 0.78rem; padding: 4px 8px; margin-left: 4px;" onclick="deleteUserAuthByIndex(${idx})">🗑️ Löschen</button>
           </td>
         `;
         tbody.appendChild(tr);
       });
     }
 
-    function editPartnerAuthByIndex(idx) {
-      const p = authPartnersList[idx];
-      if (!p) return;
-      editPartnerAuth(p.profileKey || p.id, p.role, p.name, p.email, p.partnerId);
-    }
+    function editUserAuthByIndex(idx) {
+      const u = authPartnersList[idx];
+      if (!u) return;
+      populateAuthRoleDropdowns();
 
-    function deletePartnerAuthByIndex(idx) {
-      const p = authPartnersList[idx];
-      if (!p) return;
-      deletePartnerAuth(p.profileKey || p.id);
-    }
-
-    function toggleAuthPartnerIdField() {
-      const role = document.getElementById('auth_role').value;
-      const group = document.getElementById('authPartnerIdGroup');
-      if (role === 'admin') group.style.display = 'none';
-      else group.style.display = 'flex';
-    }
-
-    function editPartnerAuth(profileKey, role, name, email, partnerId) {
-      document.getElementById('auth_profile_key').value = profileKey || '';
-      document.getElementById('auth_email').value = email || (profileKey && !profileKey.includes(':') ? profileKey : '');
-      document.getElementById('auth_email').disabled = false;
-      document.getElementById('auth_role').value = role;
-      document.getElementById('auth_name').value = name;
-      document.getElementById('auth_partner_id').value = partnerId || (role !== 'admin' ? profileKey : '');
+      document.getElementById('auth_edit_mode').value = u.email || u.id;
+      document.getElementById('auth_email').value = u.email || u.id;
+      document.getElementById('auth_email').disabled = true;
+      document.getElementById('auth_name').value = u.name || '';
       document.getElementById('auth_password').value = '';
-      document.getElementById('auth_password').focus();
-      document.getElementById('authFormTitle').textContent = `Passwort/Profil ändern für "${name}" (${role})`;
-      toggleAuthPartnerIdField();
+      document.getElementById('authPasswordHint').textContent = "Leer lassen, um das bestehende zentrale Passwort beizubehalten.";
+      document.getElementById('authFormTitle').textContent = `Benutzer bearbeiten: ${u.name || u.email} (${u.email || u.id})`;
+
+      const roles = Array.isArray(u.roles) && u.roles.length > 0 ? u.roles : [{ role: u.role, partnerId: u.partnerId }];
+
+      // Checkboxen zurücksetzen
+      document.getElementById('auth_check_admin').checked = false;
+      ['vermarkter', 'ssp', 'dsp', 'data_partner'].forEach(rk => {
+        document.getElementById(`auth_check_${rk}`).checked = false;
+        document.getElementById(`auth_wrap_${rk}`).style.display = 'none';
+      });
+
+      // Zugeordnete Rollen aktivieren
+      roles.forEach(r => {
+        if (r.role === 'admin') {
+          document.getElementById('auth_check_admin').checked = true;
+        } else if (['vermarkter', 'ssp', 'dsp', 'data_partner'].includes(r.role)) {
+          const chk = document.getElementById(`auth_check_${r.role}`);
+          const sel = document.getElementById(`auth_select_${r.role}`);
+          if (chk) chk.checked = true;
+          toggleAuthRoleDropdown(r.role);
+          if (sel && r.partnerId) {
+            let hasOpt = Array.from(sel.options).some(o => o.value === r.partnerId);
+            if (!hasOpt) {
+              const opt = document.createElement('option');
+              opt.value = r.partnerId;
+              opt.textContent = `${r.partnerId} (${r.partnerId})`;
+              sel.appendChild(opt);
+            }
+            sel.value = r.partnerId;
+          }
+        }
+      });
+
+      document.getElementById('sectionAuthRegistry').scrollIntoView({ behavior: 'smooth' });
     }
 
     function resetAuthForm() {
-      document.getElementById('auth_profile_key').value = '';
+      document.getElementById('auth_edit_mode').value = '';
       document.getElementById('auth_email').value = '';
       document.getElementById('auth_email').disabled = false;
-      document.getElementById('auth_role').value = 'admin';
-      document.getElementById('auth_partner_id').value = '';
       document.getElementById('auth_name').value = '';
       document.getElementById('auth_password').value = '';
+      document.getElementById('authPasswordHint').textContent = "Gilt für alle Rollen dieser E-Mail. Beim Bearbeiten leer lassen, um aktuelles Passwort zu behalten.";
       document.getElementById('authFormTitle').textContent = 'Neuen Benutzer / Admin anlegen';
-      toggleAuthPartnerIdField();
+
+      document.getElementById('auth_check_admin').checked = true;
+      ['vermarkter', 'ssp', 'dsp', 'data_partner'].forEach(rk => {
+        document.getElementById(`auth_check_${rk}`).checked = false;
+        document.getElementById(`auth_wrap_${rk}`).style.display = 'none';
+      });
+      populateAuthRoleDropdowns();
     }
 
     function generateRandomPassword() {
@@ -2295,19 +2447,39 @@
     }
 
     async function submitPartnerAuth() {
-      const profileKeyVal = document.getElementById('auth_profile_key').value.trim();
+      const isEditing = document.getElementById('auth_edit_mode').value.trim();
       const emailVal = document.getElementById('auth_email').value.trim();
-      const role = document.getElementById('auth_role').value;
-      const name = document.getElementById('auth_name').value.trim() || emailVal;
-      const partnerIdVal = document.getElementById('auth_partner_id').value.trim();
-      const pwd = document.getElementById('auth_password').value.trim();
+      const nameVal = document.getElementById('auth_name').value.trim() || emailVal;
+      const pwdVal = document.getElementById('auth_password').value.trim();
 
-      if (!emailVal || !pwd) {
-        alert("Bitte sowohl eine E-Mail/Login-Kennung als auch ein Passwort angeben!");
+      if (!emailVal) {
+        alert("Bitte eine E-Mail-Adresse als Login-Kennung angeben!");
         return;
       }
-      if (role !== 'admin' && !partnerIdVal) {
-        alert("Bitte eine zugehörige Partner-ID angeben (z. B. uim, magnite)!");
+
+      if (!isEditing && !pwdVal) {
+        alert("Bitte ein zentrales Passwort für den neuen Benutzer angeben!");
+        return;
+      }
+
+      // Rollen einsammeln
+      const selectedRoles = [];
+      if (document.getElementById('auth_check_admin').checked) {
+        selectedRoles.push({ role: 'admin' });
+      }
+      ['vermarkter', 'ssp', 'dsp', 'data_partner'].forEach(rk => {
+        if (document.getElementById(`auth_check_${rk}`).checked) {
+          const selVal = document.getElementById(`auth_select_${rk}`).value;
+          if (!selVal) {
+            alert(`Bitte wähle einen Partner für die Rolle "${rk}" aus!`);
+            return;
+          }
+          selectedRoles.push({ role: rk, partnerId: selVal });
+        }
+      });
+
+      if (selectedRoles.length === 0) {
+        alert("Bitte weise diesem Benutzer mindestens eine Rolle zu (z. B. Admin oder Vermarkter)!");
         return;
       }
 
@@ -2317,40 +2489,31 @@
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             password: sessionPassword,
-            profileKey: profileKeyVal || undefined,
-            targetPartnerId: partnerIdVal || emailVal,
             email: emailVal,
-            role,
-            name,
-            newPassword: pwd
+            name: nameVal,
+            roles: selectedRoles,
+            newPassword: pwdVal || undefined
           })
         });
 
         const data = await res.json();
         if (res.ok) {
-          alert(`✓ Login für "${name}" (${role}) erfolgreich gespeichert!`);
+          alert(`✓ Benutzer "${emailVal}" mit ${selectedRoles.length} Rolle(n) erfolgreich gespeichert!`);
           
           const cleanEmail = emailVal.toLowerCase();
-          const cleanPartnerId = partnerIdVal.toLowerCase();
-          const finalProfileKey = data.profileKey || profileKeyVal || (role === 'admin' ? `${cleanEmail}:admin` : `${cleanEmail}:${role}:${cleanPartnerId}`);
-          
-          const existing = authPartnersList.find(p => (p.profileKey && p.profileKey.toLowerCase() === finalProfileKey.toLowerCase()) || p.id === finalProfileKey.toLowerCase());
+          const existing = authPartnersList.find(p => (p.email || p.id).toLowerCase() === cleanEmail);
           if (existing) {
-            existing.profileKey = finalProfileKey;
-            existing.id = finalProfileKey;
-            existing.role = role;
-            existing.name = name;
             existing.email = emailVal;
-            existing.partnerId = partnerIdVal || null;
+            existing.id = cleanEmail;
+            existing.name = nameVal;
+            existing.roles = selectedRoles;
             existing.updatedAt = new Date().toISOString();
           } else {
             authPartnersList.push({
-              profileKey: finalProfileKey,
-              id: finalProfileKey,
-              role,
-              name,
+              id: cleanEmail,
               email: emailVal,
-              partnerId: partnerIdVal || null,
+              name: nameVal,
+              roles: selectedRoles,
               updatedAt: new Date().toISOString()
             });
           }
@@ -2364,8 +2527,11 @@
       }
     }
 
-    async function deletePartnerAuth(pKey) {
-      if (!confirm(`Soll der Zugang "${pKey}" wirklich gelöscht werden?`)) return;
+    async function deleteUserAuthByIndex(idx) {
+      const u = authPartnersList[idx];
+      if (!u) return;
+      const userKey = u.email || u.id;
+      if (!confirm(`Soll der Benutzer-Account "${userKey}" wirklich gelöscht werden? Alle zugewiesenen Rollen werden entfernt.`)) return;
 
       try {
         const res = await fetch(WORKER_URL + "/admin/delete-partner-auth", {
@@ -2373,16 +2539,17 @@
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             password: sessionPassword,
-            profileKey: pKey,
-            targetPartnerId: pKey
+            email: userKey,
+            targetPartnerId: userKey
           })
         });
 
         const data = await res.json();
         if (res.ok) {
-          authPartnersList = authPartnersList.filter(p => (p.profileKey || p.id) !== pKey && p.id !== pKey);
+          authPartnersList.splice(idx, 1);
           renderAuthTable();
-          alert(`✓ Zugang für ${pKey} wurde entfernt.`);
+          resetAuthForm();
+          alert(`✓ Benutzer "${userKey}" wurde erfolgreich gelöscht.`);
         } else {
           alert("Fehler beim Löschen: " + (data.error || 'Unbekannter Fehler'));
         }
