@@ -100,16 +100,26 @@ Dieses Handbuch beschreibt, wie Administratoren der **OVK ID Landscape Map** neu
 
 ---
 
-## 5. Passwörter & Cloudflare-Konfiguration verwalten
+## 5. Passwörter & Benutzerverwaltung (Ohne Cloudflare-Dashboard)
 
-Die Passwörter und Repository-Verknüpfungen liegen geschützt im Cloudflare Gatekeeper Worker:
+Mit dem aktualisierten Gatekeeper Worker (**Phase 1**) müssen Passwörter für Partner nicht mehr manuell als Secrets im Cloudflare-Dashboard hinterlegt werden:
 
+### A. Automatische Partner-Auth-Registry (Empfohlen)
+* Die Partner-Accounts werden geschützt in `config/auth_registry.json` im Ziel-Repository geführt.
+* Passwörter werden mit **SHA-256 + individuellem Salt + Worker-Pepper** kryptografisch gehasht. Im öffentlichen GitHub-Repository sind keine Klartext-Passwörter sichtbar.
+* Der Administrator kann Partner-Logins über die Admin-Schnittstelle anlegen, aktualisieren und löschen (`POST /admin/save-partner-auth` und `POST /admin/delete-partner-auth`).
+
+### B. Legacy Fallback (Cloudflare Secrets)
+Bestehende, in Cloudflare hinterlegte Secrets bleiben weiterhin voll funktionsfähig:
 * **Admin-Passwort:** Umgebungsvariable `ADMIN_PASSWORD` (berechtigt zur Bearbeitung aller Editoren und Partner).
 * **Vermarkter-Passwörter:** Variable `PWD_<vermarkterId>` (z. B. `PWD_uim`, `PWD_stroeer`).
 * **Data-Partner-Passwörter:** Variable `PWD_<dataPartnerId>` (z. B. `PWD_iq_data`).
-* **Ziel-Repository:**
-  * `GITHUB_OWNER`: z. B. `BVDW-org`
-  * `GITHUB_REPO`: z. B. `ovk-identifiersupport`
-  * `GITHUB_BRANCH`: `main`
-  * `GITHUB_BASE_PATH`: z. B. `tools/identifier-landscape`
-  * `GITHUB_TOKEN`: GitHub Personal Access Token (PAT) mit `repo`-Scope.
+
+### C. Repository-Verbindung in Cloudflare
+Die Verbindung zum führenden BVDW-Repository erfolgt unverändert über die Cloudflare Environment-Variablen:
+* `GITHUB_OWNER`: z. B. `BVDW-org`
+* `GITHUB_REPO`: z. B. `ovk-identifiersupport`
+* `GITHUB_BRANCH`: `main`
+* `GITHUB_BASE_PATH`: z. B. `tools/identifier-landscape`
+* `GITHUB_TOKEN`: GitHub Personal Access Token (PAT) mit `repo`-Scope.
+

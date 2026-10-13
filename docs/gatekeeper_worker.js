@@ -31,15 +31,20 @@ export default {
         'User-Agent': 'OVK-Landscape-Gatekeeper'
       };
 
+      // Pepper für Password-Hashing (aus ENV oder Fallback auf ADMIN_PASSWORD)
+      const authPepper = env.AUTH_SALT || env.ADMIN_PASSWORD || 'ovk-gatekeeper-pepper-secret';
+
       // Hilfsfunktion: Pfadauflösung einheitlich für Lese- und Speichervorgang
       const resolvePath = (tgt, id) => {
         let relPath = '';
         if (tgt === 'core') {
           relPath = 'config/core.js';
-        } else if (tgt === 'data_partners') {
+        } else if (tgt === 'data_partners' || tgt === 'data_partner') {
           relPath = 'config/data_partners.js';
         } else if (tgt === 'vermarkter') {
           relPath = `config/vermarkter/${id}.js`;
+        } else if (tgt === 'auth_registry') {
+          relPath = 'config/auth_registry.json';
         }
         const fullPath = basePath.length > 0 ? `${basePath}/${relPath}` : relPath;
         return { relativePath: relPath, fullPath };
@@ -65,11 +70,29 @@ export default {
         return btoa(binary);
       };
 
+      // Kryptografische Hilfsfunktionen (Web Crypto API)
+      const generateSalt = () => {
+        const bytes = new Uint8Array(16);
+        crypto.getRandomValues(bytes);
+        return Array.from(bytes).map(b => b.toString(16).padStart(2, '0')).join('');
+      };
+
+      const hashPassword = async (password, salt) => {
+        const enc = new TextEncoder();
+        const data = enc.encode(`${salt}:${password}:${authPepper}`);
+        const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+        const hashArray = Array.from(new Uint8Array(hashBuffer));
+        return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+      };
+
       // Hilfsfunktion: Einzelne Datei direkt aus dem in Cloudflare konfigurierten GitHub-Repo laden
-      const fetchGithubFile = async (relPath) => {
+      const fetchGithubFile = async (relPath, allowNotFound = false) => {
         const fullPath = basePath.length > 0 ? `${basePath}/${relPath}` : relPath;
         const apiUrl = `https://api.github.com/repos/${owner}/${repo}/contents/${fullPath}?ref=${encodeURIComponent(targetBranch)}`;
         const res = await fetch(apiUrl, { headers: githubHeaders });
+        if (res.status === 404 && allowNotFound) {
+          return null;
+        }
         if (!res.ok) {
           throw new Error(`GitHub API Fehler (${res.status}) beim Laden von ${fullPath}`);
         }
@@ -81,6 +104,75 @@ export default {
           sha: fileData.sha,
           code
         };
+      };
+
+      // Hilfsfunktion: Datei in GitHub committen / speichern
+      const saveGithubFile = async (relPath, contentStr, commitMessage) => {
+        const fullPath = basePath.length > 0 ? `${basePath}/${relPath}` : relPath;
+        const githubGetUrl = `https://api.github.com/repos/${owner}/${repo}/contents/${fullPath}?ref=${encodeURIComponent(targetBranch)}`;
+        const githubPutUrl = `https://api.github.com/repos/${owner}/${repo}/contents/${fullPath}`;
+
+        let sha = undefined;
+        const getResponse = await fetch(githubGetUrl, { headers: githubHeaders });
+        if (getResponse.ok) {
+          const fileData = await getResponse.json();
+          sha = fileData.sha;
+        }
+
+        const base64Content = encodeUtf8Base64(contentStr);
+        const putBody = {
+          message: commitMessage,
+          content: base64Content,
+          branch: targetBranch
+        };
+        if (sha) {
+          putBody.sha = sha;
+        }
+
+        const putResponse = await fetch(githubPutUrl, {
+          method: 'PUT',
+          headers: githubHeaders,
+          body: JSON.stringify(putBody)
+        });
+
+        if (!putResponse.ok) {
+          const errorText = await putResponse.text();
+          throw new Error(`GitHub API Fehler (${putResponse.status}): ${errorText}`);
+        }
+
+        return { fullPath, sha };
+      };
+
+      // Hilfsfunktionen für Auth-Registry im GitHub Repo
+      const loadAuthRegistry = async () => {
+        try {
+          const file = await fetchGithubFile('config/auth_registry.json', true);
+          if (!file || !file.code) return { partners: {} };
+          const parsed = JSON.parse(file.code);
+          return parsed.partners ? parsed : { partners: {} };
+        } catch (e) {
+          return { partners: {} };
+        }
+      };
+
+      const saveAuthRegistry = async (registry, commitMessage) => {
+        const jsonStr = JSON.stringify(registry, null, 2);
+        return await saveGithubFile('config/auth_registry.json', jsonStr, commitMessage);
+      };
+
+      // Hilfsfunktion: Sicheres Auswerten und Serialisieren von Config-Objekten
+      const parseConfigCode = (code) => {
+        const fakeWindow = {};
+        const fn = new Function('window', code + '\nreturn window.OVK_LANDSCAPE_CONFIG;');
+        return fn(fakeWindow) || {};
+      };
+
+      const serializeCoreConfig = (configObj) => {
+        return `// OVK ID Landscape Map - Core Konfigurationsdaten\n// IDs, Usecases, DSPs, SSPs\n\nwindow.OVK_LANDSCAPE_CONFIG = ${JSON.stringify(configObj, null, 2)};\n`;
+      };
+
+      const serializeDataPartnersConfig = (dataPartnersArray) => {
+        return `// OVK ID Landscape Map - Data Partner Konfigurationsdaten\n\nif (!window.OVK_LANDSCAPE_CONFIG) {\n  window.OVK_LANDSCAPE_CONFIG = {};\n}\n\nwindow.OVK_LANDSCAPE_CONFIG.dataPartners = ${JSON.stringify(dataPartnersArray, null, 2)};\n`;
       };
 
       // Hilfsfunktion: Alle Vermarkter-Dateien aus dem in Cloudflare konfigurierten GitHub-Repo laden
@@ -146,99 +238,203 @@ export default {
       }
 
       const body = await request.json();
-      const { vermarkterId, password, code, target = 'vermarkter', loadAllVermarkter = false } = body;
+      const {
+        vermarkterId,
+        password,
+        code,
+        data,
+        target = 'vermarkter',
+        partnerId: inputPartnerId,
+        loadAllVermarkter = false
+      } = body;
 
       if (!password) {
-        return new Response('Fehlendes Passwort', { status: 400, headers: corsHeaders });
+        return new Response(JSON.stringify({ error: 'Fehlendes Passwort' }), {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
       }
 
-      // Passwort Validierung
-      const passwords = JSON.parse(env.VERMARKTER_PASSWORDS || '{}');
-      let authId = vermarkterId;
-      let expectedPassword = authId ? (env[`PWD_${authId}`] || passwords[authId]) : undefined;
-      
       const isAdmin = Boolean(env.ADMIN_PASSWORD && password === env.ADMIN_PASSWORD);
+      let authRole = isAdmin ? 'admin' : null;
+      let authPartnerId = isAdmin ? 'admin' : (inputPartnerId || vermarkterId);
+      let authPartnerName = isAdmin ? 'Administrator' : null;
 
-      // Falls keine spezifische ID in der URL übergeben wurde, prüfe ob das Passwort zu einem hinterlegten Vermarkter gehört
-      if (!isAdmin && (!authId || authId === 'admin')) {
-        if (env) {
-          for (const key of Object.keys(env)) {
-            if (key.startsWith('PWD_') && env[key] === password) {
-              authId = key.replace(/^PWD_/, '');
-              expectedPassword = env[key];
-              break;
-            }
+      // 1. Authentifizierung über auth_registry.json im GitHub-Repo prüfen
+      const authRegistry = await loadAuthRegistry();
+      if (!isAdmin) {
+        // Falls spezifische ID übergeben wurde
+        if (authPartnerId && authPartnerId !== 'admin' && authRegistry.partners[authPartnerId]) {
+          const p = authRegistry.partners[authPartnerId];
+          const calculatedHash = await hashPassword(password, p.salt);
+          if (calculatedHash === p.hash) {
+            authRole = p.role;
+            authPartnerName = p.name;
           }
-        }
-        if ((!authId || authId === 'admin') && passwords) {
-          for (const [idKey, pwdVal] of Object.entries(passwords)) {
-            if (pwdVal === password) {
-              authId = idKey;
-              expectedPassword = pwdVal;
+        } else {
+          // Passwort mit allen Partner-Hashes abgleichen (Auto-Erkennung)
+          for (const [pId, pData] of Object.entries(authRegistry.partners)) {
+            const calculatedHash = await hashPassword(password, pData.salt);
+            if (calculatedHash === pData.hash) {
+              authPartnerId = pId;
+              authRole = pData.role;
+              authPartnerName = pData.name;
               break;
             }
           }
         }
       }
 
-      const isUser = Boolean(authId && expectedPassword && expectedPassword === password);
+      // 2. Fallback: Authentifizierung über Cloudflare Environment-Variablen (PWD_* / VERMARKTER_PASSWORDS)
+      if (!isAdmin && !authRole) {
+        const passwords = JSON.parse(env.VERMARKTER_PASSWORDS || '{}');
+        let expectedPassword = authPartnerId ? (env[`PWD_${authPartnerId}`] || passwords[authPartnerId]) : undefined;
 
-      if (!isAdmin && !isUser) {
-        return new Response('Falsches Passwort', { status: 401, headers: corsHeaders });
+        if (!expectedPassword) {
+          if (env) {
+            for (const key of Object.keys(env)) {
+              if (key.startsWith('PWD_') && env[key] === password) {
+                authPartnerId = key.replace(/^PWD_/, '');
+                expectedPassword = env[key];
+                break;
+              }
+            }
+          }
+          if (!expectedPassword && passwords) {
+            for (const [idKey, pwdVal] of Object.entries(passwords)) {
+              if (pwdVal === password) {
+                authPartnerId = idKey;
+                expectedPassword = pwdVal;
+                break;
+              }
+            }
+          }
+        }
+
+        if (expectedPassword && expectedPassword === password) {
+          authRole = authPartnerId.endsWith('_data') ? 'data_partner' : 'vermarkter';
+          authPartnerName = authPartnerId;
+        }
       }
 
-      // Login Check Route: Lädt zusätzlich die führenden Config-Dateien direkt aus dem Cloudflare-Ziel-Repository
+      if (!isAdmin && !authRole) {
+        return new Response(JSON.stringify({ error: 'Falsches Passwort' }), {
+          status: 401,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+      }
+
+      // -------------------------------------------------------------
+      // Route: POST /admin/save-partner-auth (Admin legt Partner-Login an / ändert Passwort)
+      // -------------------------------------------------------------
+      if (url.pathname === '/admin/save-partner-auth') {
+        if (!isAdmin) {
+          return new Response(JSON.stringify({ error: 'Nur Admins können Partner-Logins anlegen' }), {
+            status: 403,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          });
+        }
+
+        const { targetPartnerId, role: newRole, name: newName, newPassword } = body;
+        if (!targetPartnerId || !newPassword || !newRole) {
+          return new Response(JSON.stringify({ error: 'Fehlende Parameter (targetPartnerId, role, newPassword)' }), {
+            status: 400,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          });
+        }
+
+        const salt = generateSalt();
+        const hash = await hashPassword(newPassword, salt);
+
+        authRegistry.partners[targetPartnerId] = {
+          role: newRole,
+          name: newName || targetPartnerId,
+          salt,
+          hash,
+          updatedAt: new Date().toISOString()
+        };
+
+        await saveAuthRegistry(authRegistry, `Admin: Update Auth für Partner ${targetPartnerId}`);
+
+        return new Response(JSON.stringify({
+          success: true,
+          message: `Login für ${newName || targetPartnerId} erfolgreich gespeichert!`,
+          partnerId: targetPartnerId,
+          role: newRole
+        }), {
+          status: 200,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+      }
+
+      // -------------------------------------------------------------
+      // Route: POST /admin/delete-partner-auth (Admin löscht Partner-Login)
+      // -------------------------------------------------------------
+      if (url.pathname === '/admin/delete-partner-auth') {
+        if (!isAdmin) {
+          return new Response(JSON.stringify({ error: 'Nur Admins können Partner-Logins löschen' }), {
+            status: 403,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          });
+        }
+
+        const { targetPartnerId } = body;
+        if (!targetPartnerId || !authRegistry.partners[targetPartnerId]) {
+          return new Response(JSON.stringify({ error: 'Partner-Login nicht gefunden' }), {
+            status: 404,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          });
+        }
+
+        delete authRegistry.partners[targetPartnerId];
+        await saveAuthRegistry(authRegistry, `Admin: Lösche Auth für Partner ${targetPartnerId}`);
+
+        return new Response(JSON.stringify({
+          success: true,
+          message: `Login für ${targetPartnerId} erfolgreich entfernt!`
+        }), {
+          status: 200,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+      }
+
+      // -------------------------------------------------------------
+      // Route: POST /login
+      // -------------------------------------------------------------
       if (url.pathname === '/login') {
-        const knownVermarkterIds = new Set();
-        if (env) {
-          for (const key of Object.keys(env)) {
-            if (key.startsWith('PWD_')) {
-              knownVermarkterIds.add(key.replace(/^PWD_/, ''));
-            }
-          }
-        }
-        for (const id of Object.keys(passwords)) {
-          knownVermarkterIds.add(id);
-        }
-
-        let vermarkterInfo = null;
-        if (authId && authId !== 'admin') {
-          const paths = resolvePath('vermarkter', authId);
-          vermarkterInfo = {
-            id: authId,
-            relativePath: paths.relativePath,
-            fullPath: paths.fullPath
-          };
-        }
-
-        // Lade Core, Data Partners und Vermarkter-Configs direkt aus dem in Cloudflare hinterlegten GitHub-Repo
         const [coreFile, dataPartnersFile] = await Promise.all([
           fetchGithubFile('config/core.js'),
           fetchGithubFile('config/data_partners.js')
         ]);
 
         let vermarkterFiles = [];
-        if (isAdmin || loadAllVermarkter) {
-          vermarkterFiles = await fetchAllVermarkterFiles(Array.from(knownVermarkterIds));
-        } else if (authId && authId !== 'admin') {
+        if (isAdmin || loadAllVermarkter || authRole === 'admin') {
+          vermarkterFiles = await fetchAllVermarkterFiles();
+        } else if (authRole === 'vermarkter' && authPartnerId) {
           try {
-            const singleFile = await fetchGithubFile(`config/vermarkter/${authId}.js`);
-            vermarkterFiles = [{ id: authId, ...singleFile }];
+            const singleFile = await fetchGithubFile(`config/vermarkter/${authPartnerId}.js`);
+            vermarkterFiles = [{ id: authPartnerId, ...singleFile }];
           } catch (err) {
-            // Falls authId ein Data Partner (z.B. uim_data) ist, existiert keine eigene Vermarkter-Datei
             vermarkterFiles = [];
           }
         }
 
-        const allVermarkter = vermarkterFiles.map(v => ({
-          id: v.id,
-          relativePath: v.relativePath,
-          fullPath: v.fullPath
-        }));
+        // Sanitized Partner-Liste für Admin-Oberfläche (ohne Hashes & Salts)
+        const sanitizedAuthPartners = isAdmin
+          ? Object.entries(authRegistry.partners).map(([id, p]) => ({
+              id,
+              role: p.role,
+              name: p.name,
+              updatedAt: p.updatedAt
+            }))
+          : undefined;
 
-        return new Response(JSON.stringify({ 
-          success: true, 
+        return new Response(JSON.stringify({
+          success: true,
           isAdmin,
+          role: authRole,
+          partnerId: authPartnerId,
+          partnerName: authPartnerName,
           basePath,
           repository: {
             owner,
@@ -246,83 +442,174 @@ export default {
             branch: targetBranch,
             basePath
           },
-          vermarkter: vermarkterInfo,
-          allVermarkter: isAdmin ? allVermarkter : undefined,
+          vermarkter: (authRole === 'vermarkter' && authPartnerId) ? {
+            id: authPartnerId,
+            relativePath: `config/vermarkter/${authPartnerId}.js`,
+            fullPath: basePath.length > 0 ? `${basePath}/config/vermarkter/${authPartnerId}.js` : `config/vermarkter/${authPartnerId}.js`
+          } : null,
+          allVermarkter: isAdmin ? vermarkterFiles.map(v => ({ id: v.id, relativePath: v.relativePath, fullPath: v.fullPath })) : undefined,
+          authPartners: sanitizedAuthPartners,
           configs: {
             core: coreFile,
             dataPartners: dataPartnersFile,
             vermarkter: vermarkterFiles
           }
-        }), { 
-          status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }), {
+          status: 200,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         });
       }
 
-      if (!code) {
-        return new Response('Fehlender Code', { status: 400, headers: corsHeaders });
+      // -------------------------------------------------------------
+      // Route: Speichern (POST /save oder Standard-POST)
+      // -------------------------------------------------------------
+      const effectiveTarget = target;
+      const targetEntityId = inputPartnerId || authPartnerId;
+
+      // Berechtigungsprüfungen für Speicheraktionen
+      if (effectiveTarget === 'core' && !isAdmin) {
+        return new Response(JSON.stringify({ error: 'Nur Admins können die gesamte core.js bearbeiten' }), {
+          status: 403,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
       }
 
-      // Zielpfad bestimmen und Rechte prüfen
-      if (target === 'core' && !isAdmin) {
-        return new Response('Nur Admins können core.js bearbeiten', { status: 403, headers: corsHeaders });
-      }
-      if (target === 'vermarkter' && !authId) {
-        return new Response('Fehlende Vermarkter ID', { status: 400, headers: corsHeaders });
-      }
-      if (!['core', 'data_partners', 'vermarkter'].includes(target)) {
-        return new Response('Ungültiges Target', { status: 400, headers: corsHeaders });
+      if (effectiveTarget === 'data_partners' && !isAdmin) {
+        return new Response(JSON.stringify({ error: 'Nur Admins können die gesamte data_partners.js bearbeiten' }), {
+          status: 403,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
       }
 
-      const paths = resolvePath(target, authId);
-      const path = paths.fullPath;
-
-      const githubGetUrl = `https://api.github.com/repos/${owner}/${repo}/contents/${path}?ref=${encodeURIComponent(targetBranch)}`;
-      const githubPutUrl = `https://api.github.com/repos/${owner}/${repo}/contents/${path}`;
-
-      let sha = undefined;
-      const getResponse = await fetch(githubGetUrl, { headers: githubHeaders });
-      if (getResponse.ok) {
-        const fileData = await getResponse.json();
-        sha = fileData.sha;
+      if (effectiveTarget === 'vermarkter') {
+        if (!isAdmin && authPartnerId !== targetEntityId) {
+          return new Response(JSON.stringify({ error: 'Keine Berechtigung für diesen Vermarkter' }), {
+            status: 403,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          });
+        }
       }
 
-      const base64Content = encodeUtf8Base64(code);
-
-      const putBody = {
-        message: `Update Konfiguration für ${target} (${authId || ''}) via Editor`,
-        content: base64Content,
-        branch: targetBranch
-      };
-
-      if (sha) {
-        putBody.sha = sha;
+      if (effectiveTarget === 'ssp') {
+        if (!isAdmin && (authRole !== 'ssp' || authPartnerId !== targetEntityId)) {
+          return new Response(JSON.stringify({ error: 'Keine Berechtigung für diesen SSP' }), {
+            status: 403,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          });
+        }
       }
 
-      const putResponse = await fetch(githubPutUrl, {
-        method: 'PUT',
-        headers: githubHeaders,
-        body: JSON.stringify(putBody)
-      });
-
-      if (!putResponse.ok) {
-        const errorText = await putResponse.text();
-        return new Response(`GitHub API Fehler: ${errorText}`, { status: 502, headers: corsHeaders });
+      if (effectiveTarget === 'dsp') {
+        if (!isAdmin && (authRole !== 'dsp' || authPartnerId !== targetEntityId)) {
+          return new Response(JSON.stringify({ error: 'Keine Berechtigung für diesen DSP' }), {
+            status: 403,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          });
+        }
       }
 
-      return new Response(JSON.stringify({ 
-        success: true, 
+      if (effectiveTarget === 'data_partner') {
+        if (!isAdmin && (authRole !== 'data_partner' || authPartnerId !== targetEntityId)) {
+          return new Response(JSON.stringify({ error: 'Keine Berechtigung für diesen Data Partner' }), {
+            status: 403,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          });
+        }
+      }
+
+      // Durchführung des Speichervorgangs je nach Target
+      let savedPath = '';
+
+      if (effectiveTarget === 'core') {
+        if (!code) throw new Error('Fehlender Code für core.js');
+        const res = await saveGithubFile('config/core.js', code, 'Update core.js via Editor');
+        savedPath = res.fullPath;
+
+      } else if (effectiveTarget === 'data_partners') {
+        if (!code) throw new Error('Fehlender Code für data_partners.js');
+        const res = await saveGithubFile('config/data_partners.js', code, 'Update data_partners.js via Editor');
+        savedPath = res.fullPath;
+
+      } else if (effectiveTarget === 'vermarkter') {
+        if (!code) throw new Error('Fehlender Code für Vermarkter');
+        const paths = resolvePath('vermarkter', targetEntityId);
+        const res = await saveGithubFile(paths.relativePath, code, `Update Vermarkter ${targetEntityId} via Editor`);
+        savedPath = res.fullPath;
+
+      } else if (effectiveTarget === 'ssp') {
+        // Zielgerichtetes Aktualisieren einer einzelnen SSP in config/core.js
+        const coreFileData = await fetchGithubFile('config/core.js');
+        const coreConfig = parseConfigCode(coreFileData.code);
+        if (!coreConfig.ssps) coreConfig.ssps = [];
+
+        const sspIndex = coreConfig.ssps.findIndex(s => s.id === targetEntityId);
+        if (sspIndex >= 0) {
+          coreConfig.ssps[sspIndex] = { ...coreConfig.ssps[sspIndex], ...data, id: targetEntityId };
+        } else {
+          coreConfig.ssps.push({ ...data, id: targetEntityId });
+        }
+
+        const updatedCode = serializeCoreConfig(coreConfig);
+        const res = await saveGithubFile('config/core.js', updatedCode, `Update SSP ${targetEntityId} via Editor`);
+        savedPath = res.fullPath;
+
+      } else if (effectiveTarget === 'dsp') {
+        // Zielgerichtetes Aktualisieren einer einzelnen DSP in config/core.js
+        const coreFileData = await fetchGithubFile('config/core.js');
+        const coreConfig = parseConfigCode(coreFileData.code);
+        if (!coreConfig.dsps) coreConfig.dsps = [];
+
+        const dspIndex = coreConfig.dsps.findIndex(d => d.id === targetEntityId);
+        if (dspIndex >= 0) {
+          coreConfig.dsps[dspIndex] = { ...coreConfig.dsps[dspIndex], ...data, id: targetEntityId };
+        } else {
+          coreConfig.dsps.push({ ...data, id: targetEntityId });
+        }
+
+        const updatedCode = serializeCoreConfig(coreConfig);
+        const res = await saveGithubFile('config/core.js', updatedCode, `Update DSP ${targetEntityId} via Editor`);
+        savedPath = res.fullPath;
+
+      } else if (effectiveTarget === 'data_partner') {
+        // Zielgerichtetes Aktualisieren eines Data Partners in config/data_partners.js
+        const dpFileData = await fetchGithubFile('config/data_partners.js');
+        const fakeWindow = {};
+        (new Function('window', dpFileData.code + '\nreturn window.OVK_LANDSCAPE_CONFIG;'))(fakeWindow);
+        const dpConfig = fakeWindow.OVK_LANDSCAPE_CONFIG || {};
+        if (!dpConfig.dataPartners) dpConfig.dataPartners = [];
+
+        const dpIndex = dpConfig.dataPartners.findIndex(p => p.id === targetEntityId);
+        if (dpIndex >= 0) {
+          dpConfig.dataPartners[dpIndex] = { ...dpConfig.dataPartners[dpIndex], ...data, id: targetEntityId };
+        } else {
+          dpConfig.dataPartners.push({ ...data, id: targetEntityId });
+        }
+
+        const updatedCode = serializeDataPartnersConfig(dpConfig.dataPartners);
+        const res = await saveGithubFile('config/data_partners.js', updatedCode, `Update Data Partner ${targetEntityId} via Editor`);
+        savedPath = res.fullPath;
+
+      } else {
+        return new Response(JSON.stringify({ error: `Unbekanntes Target: ${effectiveTarget}` }), {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+      }
+
+      return new Response(JSON.stringify({
+        success: true,
         message: 'Erfolgreich gespeichert!',
-        savedPath: path,
+        savedPath,
         repository: `${owner}/${repo}@${targetBranch}`
-      }), { 
-        status: 200, 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+      }), {
+        status: 200,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });
 
     } catch (error) {
-      return new Response(JSON.stringify({ error: error.message }), { 
-        status: 500, 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+      return new Response(JSON.stringify({ error: error.message }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });
     }
   }
