@@ -97,40 +97,14 @@
     </div>
 </div>
 
-<!-- Load Base Configurations with dynamic cache-busting -->
+<!-- Konfigurationen werden nach Authentifizierung direkt aus dem in Cloudflare hinterlegten Ziel-Repository geladen -->
 <script>
-    async function loadConfigFile(filePath) {
-        try {
-            const res = await fetch(filePath + '?t=' + Date.now());
-            if (!res.ok) throw new Error("HTTP Status " + res.status);
-            const code = await res.text();
-            (new Function(code))();
-            return true;
-        } catch(e) {
-            console.error("Fehler beim Laden von " + filePath, e);
-            return false;
-        }
-    }
-
-    (async function() {
-        // Initiale Kern-Konfigurationen laden (IDs, SSPs, DSPs, Data Partners)
-        const baseFiles = ['config/core.js', 'config/data_partners.js'];
-        for (const f of baseFiles) {
-            await loadConfigFile(f);
-        }
-        
-        if (typeof init === 'function') {
-            init();
-        }
-    })();
-</script>
-
-<script>
-    let CONFIG;
+    let CONFIG = { ids: [], usecases: [], dsps: [], ssps: [], dataPartners: [], vermarkter: [] };
     let currentVermarkter = null;
     let initialCoreState = {}; // To track changes in core.js
     let activeVermarkterConfig = null; // Vom Cloudflare Worker gelieferte Pfad-Info
     let cloudflareBasePath = ""; // GITHUB_BASE_PATH aus Cloudflare
+    let cloudflareRepoInfo = null; // { owner, repo, branch, basePath }
     
     // Auth State
     let sessionPassword = "";
@@ -144,6 +118,16 @@
 
     // Cloudflare URL
     const WORKER_URL = "https://ovk-ladscape.friedrich-schenk.workers.dev";
+
+    function executeConfigCode(code, label) {
+        try {
+            (new Function(code))();
+            return true;
+        } catch(e) {
+            console.error("Fehler beim Ausführen von " + label, e);
+            return false;
+        }
+    }
     
     async function performLogin() {
         const pwd = document.getElementById('loginPassword').value;
@@ -153,7 +137,7 @@
         if(!pwd) return;
         
         btn.disabled = true;
-        btn.textContent = "Prüfe...";
+        btn.textContent = "Prüfe & lade aus Ziel-Repo...";
         err.style.display = 'none';
 
         try {
@@ -168,39 +152,44 @@
                 sessionPassword = pwd;
                 isAdmin = data.isAdmin;
                 cloudflareBasePath = data.basePath || '';
-                
-                btn.textContent = "Lade Konfiguration...";
-                
-                // Option A: Pfad zur Vermarkter Config aus der Cloudflare-Antwort laden
-                if (data.vermarkter && data.vermarkter.relativePath) {
+                cloudflareRepoInfo = data.repository || null;
+
+                if (!data.configs || !data.configs.core || !data.configs.core.code) {
+                    err.style.display = 'block';
+                    err.textContent = "Cloudflare Worker Update erforderlich: Der Worker liefert noch keine Config-Dateien aus dem Ziel-Repository. Bitte kopiere den aktuellen Code aus 'docs/gatekeeper_worker.js' in dein Cloudflare Worker Dashboard (Save & Deploy).";
+                    btn.disabled = false;
+                    btn.textContent = "Anmelden";
+                    return;
+                }
+
+                // Setze globale Config zurück, damit ausschließlich das in Cloudflare hinterlegte Repository führend ist
+                window.OVK_LANDSCAPE_CONFIG = { vermarkter: [] };
+
+                // 1. Core Config aus Cloudflare-Ziel-Repository ausführen
+                executeConfigCode(data.configs.core.code, data.configs.core.fullPath || 'config/core.js');
+
+                // 2. Data Partners Config aus Cloudflare-Ziel-Repository ausführen
+                if (data.configs.dataPartners && data.configs.dataPartners.code) {
+                    executeConfigCode(data.configs.dataPartners.code, data.configs.dataPartners.fullPath || 'config/data_partners.js');
+                }
+
+                // 3. Vermarkter Config(s) aus Cloudflare-Ziel-Repository ausführen
+                if (!window.OVK_LANDSCAPE_CONFIG.vermarkter) {
+                    window.OVK_LANDSCAPE_CONFIG.vermarkter = [];
+                }
+                if (Array.isArray(data.configs.vermarkter)) {
+                    for (const vFile of data.configs.vermarkter) {
+                        if (vFile && vFile.code) {
+                            executeConfigCode(vFile.code, vFile.fullPath || vFile.relativePath);
+                        }
+                    }
+                }
+
+                if (data.vermarkter) {
                     activeVermarkterConfig = data.vermarkter;
-                    await loadConfigFile(data.vermarkter.relativePath);
                 }
                 
-                if (isAdmin && Array.isArray(data.allVermarkter) && data.allVermarkter.length > 0) {
-                    for (const v of data.allVermarkter) {
-                        await loadConfigFile(v.relativePath);
-                    }
-                } else if (isAdmin && (!data.allVermarkter || data.allVermarkter.length === 0)) {
-                    // Fallback für Admin, falls keine Vermarkterliste im Worker hinterlegt ist
-                    const fallbackList = [
-                        'config/vermarkter/ad_alliance.js',
-                        'config/vermarkter/bcn.js',
-                        'config/vermarkter/funke.js',
-                        'config/vermarkter/iqd.js',
-                        'config/vermarkter/media_impact.js',
-                        'config/vermarkter/score.js',
-                        'config/vermarkter/seven_one_media.js',
-                        'config/vermarkter/stroeer.js',
-                        'config/vermarkter/uim.js',
-                        'config/vermarkter/visoon.js'
-                    ];
-                    for (const f of fallbackList) {
-                        await loadConfigFile(f);
-                    }
-                }
-                
-                CONFIG = window.OVK_LANDSCAPE_CONFIG || {};
+                CONFIG = window.OVK_LANDSCAPE_CONFIG || { vermarkter: [] };
                 populateSelect();
 
                 document.getElementById('loginOverlay').style.display = 'none';
@@ -211,10 +200,10 @@
                     select.disabled = true;
                     select.value = targetId;
                     loadVermarkter(targetId);
-                } else if (isAdmin && urlId) {
+                } else if (isAdmin && targetId) {
                     // Admin besucht spezifischen Link
-                    select.value = urlId;
-                    loadVermarkter(urlId);
+                    select.value = targetId;
+                    loadVermarkter(targetId);
                 }
             } else {
                 const errorText = await res.text();
@@ -247,24 +236,18 @@
     }
     
     function init() {
-        CONFIG = window.OVK_LANDSCAPE_CONFIG || {};
-        if (!CONFIG.vermarkter) {
-            CONFIG.vermarkter = [];
-        }
-
-        populateSelect();
-
         // Event Listeners
         select.addEventListener('change', (e) => loadVermarkter(e.target.value));
         
         // URL Handling for Login Form
         if (urlId) {
-            const vMatch = CONFIG.vermarkter.find(v => v.id === urlId);
-            document.getElementById('loginTitle').textContent = vMatch ? vMatch.name : `OVK Editor (${urlId})`;
+            document.getElementById('loginTitle').textContent = `OVK Editor (${urlId})`;
         } else {
             document.getElementById('loginTitle').textContent = 'OVK Admin Login';
         }
     }
+
+    init();
 
     function loadVermarkter(id) {
         if (!id) {
@@ -279,14 +262,19 @@
         const found = CONFIG.vermarkter ? CONFIG.vermarkter.find(v => v.id === id) : null;
         currentVermarkter = JSON.parse(JSON.stringify(found || { id }));
         
-        // Pfad aus Cloudflare-Konfiguration oder Standardformat
+        // Pfad & Ziel-Repository aus Cloudflare-Konfiguration
         let targetDisplayPath = `config/vermarkter/${id}.js`;
         if (activeVermarkterConfig && activeVermarkterConfig.id === id && activeVermarkterConfig.fullPath) {
             targetDisplayPath = activeVermarkterConfig.fullPath;
         } else if (cloudflareBasePath) {
             targetDisplayPath = `${cloudflareBasePath}/config/vermarkter/${id}.js`;
         }
-        filenamePreview.textContent = targetDisplayPath;
+        if (cloudflareRepoInfo && cloudflareRepoInfo.owner && cloudflareRepoInfo.repo) {
+            const branchInfo = cloudflareRepoInfo.branch ? `@${cloudflareRepoInfo.branch}` : '';
+            filenamePreview.textContent = `${cloudflareRepoInfo.owner}/${cloudflareRepoInfo.repo}${branchInfo}: ${targetDisplayPath}`;
+        } else {
+            filenamePreview.textContent = targetDisplayPath;
+        }
         document.getElementById('pwdVermarkterName').textContent = currentVermarkter.name || id;
         document.getElementById('publishStatus').style.display = 'none';
         

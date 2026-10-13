@@ -231,65 +231,37 @@
   </div>
 </div>
 
-<!-- Load all core and Vermarkter config files with dynamic cache-busting -->
-<script>
-    (async function() {
-        let files = ['config/core.js', 'config/data_partners.js'];
-        try {
-            const dirRes = await fetch('config/vermarkter/');
-            if (dirRes.ok) {
-                const dirHtml = await dirRes.text();
-                const matches = dirHtml.match(/href="([^"]+\.js)"/g);
-                if (matches) {
-                    const vermarkterFiles = matches.map(m => 'config/vermarkter/' + m.match(/"([^"]+)"/)[1]);
-                    files = files.concat(vermarkterFiles);
-                }
-            } else {
-                throw new Error("HTTP Status " + dirRes.status);
-            }
-        } catch(e) {
-            console.warn("Verzeichnis /config/vermarkter/ konnte nicht ausgelesen werden. Verwende Fallback-Liste.", e);
-            files = files.concat([
-                'config/vermarkter/ad_alliance.js',
-                'config/vermarkter/bcn.js',
-                'config/vermarkter/funke.js',
-                'config/vermarkter/iqd.js',
-                'config/vermarkter/media_impact.js',
-                'config/vermarkter/score.js',
-                'config/vermarkter/seven_one_media.js',
-                'config/vermarkter/stroeer.js',
-                'config/vermarkter/uim.js',
-                'config/vermarkter/visoon.js'
-            ]);
-        }
-        
-        for (const f of files) {
-            try {
-                const res = await fetch(f + '?t=' + Date.now());
-                const code = await res.text();
-                (new Function(code))();
-            } catch(e) {
-                console.error("Fehler beim Laden von " + f, e);
-            }
-        }
-        
-        if (typeof init === 'function') {
-            init();
-        }
-    })();
-</script>
-
+<!-- Konfigurationen werden nach Authentifizierung direkt aus dem in Cloudflare hinterlegten Ziel-Repository geladen -->
 <script>
   let activeTab = 'dsps';
-  let coreConfig = null;
+  let coreConfig = { ids: [], usecases: [], dsps: [], ssps: [], dataPartners: [], vermarkter: [] };
   let availableVermarkter = [];
   let currentItemId = null;
+  let cloudflareRepoInfo = null;
+  let cloudflareCoreFullPath = 'config/core.js';
+  let cloudflareDataPartnersFullPath = 'config/data_partners.js';
   
   // Auth State
   let sessionPassword = "";
   let isAdmin = false;
   let urlId = new URLSearchParams(window.location.search).get('id');
   const WORKER_URL = "https://ovk-ladscape.friedrich-schenk.workers.dev";
+
+  if (urlId) {
+      document.getElementById('loginTitle').textContent = `Data Partner Login (${urlId})`;
+  } else {
+      document.getElementById('loginTitle').textContent = 'OVK Admin Login';
+  }
+
+  function executeConfigCode(code, label) {
+      try {
+          (new Function(code))();
+          return true;
+      } catch(e) {
+          console.error("Fehler beim Ausführen von " + label, e);
+          return false;
+      }
+  }
 
   async function performLogin() {
       const pwd = document.getElementById('loginPassword').value;
@@ -299,36 +271,73 @@
       if(!pwd) return;
       
       btn.disabled = true;
-      btn.textContent = "Prüfe...";
+      btn.textContent = "Prüfe & lade aus Ziel-Repo...";
       err.style.display = 'none';
 
       try {
           const res = await fetch(WORKER_URL + "/login", {
               method: 'POST',
               headers: {'Content-Type': 'application/json'},
-              body: JSON.stringify({ vermarkterId: urlId || 'admin', password: pwd })
+              body: JSON.stringify({ vermarkterId: urlId || 'admin', password: pwd, loadAllVermarkter: true })
           });
 
           if (res.ok) {
               const data = await res.json();
               sessionPassword = pwd;
               isAdmin = data.isAdmin;
+              cloudflareRepoInfo = data.repository || null;
+
+              if (!data.configs || !data.configs.core || !data.configs.core.code) {
+                  err.style.display = 'block';
+                  err.textContent = "Cloudflare Worker Update erforderlich: Der Worker liefert noch keine Config-Dateien aus dem Ziel-Repository. Bitte kopiere den aktuellen Code aus 'docs/gatekeeper_worker.js' in dein Cloudflare Worker Dashboard (Save & Deploy).";
+                  btn.disabled = false;
+                  btn.textContent = "Anmelden";
+                  return;
+              }
+
+              // Setze globale Config zurück, damit ausschließlich das in Cloudflare hinterlegte Repository führend ist
+              window.OVK_LANDSCAPE_CONFIG = { vermarkter: [] };
+
+              // 1. Core Config aus Cloudflare-Ziel-Repository ausführen
+              cloudflareCoreFullPath = data.configs.core.fullPath || 'config/core.js';
+              executeConfigCode(data.configs.core.code, cloudflareCoreFullPath);
+
+              // 2. Data Partners Config aus Cloudflare-Ziel-Repository ausführen
+              if (data.configs.dataPartners && data.configs.dataPartners.code) {
+                  cloudflareDataPartnersFullPath = data.configs.dataPartners.fullPath || 'config/data_partners.js';
+                  executeConfigCode(data.configs.dataPartners.code, cloudflareDataPartnersFullPath);
+              }
+
+              // 3. Vermarkter Configs aus Cloudflare-Ziel-Repository ausführen
+              if (!window.OVK_LANDSCAPE_CONFIG.vermarkter) {
+                  window.OVK_LANDSCAPE_CONFIG.vermarkter = [];
+              }
+              if (Array.isArray(data.configs.vermarkter)) {
+                  for (const vFile of data.configs.vermarkter) {
+                      if (vFile && vFile.code) {
+                          executeConfigCode(vFile.code, vFile.fullPath || vFile.relativePath);
+                      }
+                  }
+              }
+
+              init();
               
               document.getElementById('loginOverlay').style.display = 'none';
               
-              if (!isAdmin && urlId) {
+              const targetId = urlId || (data.vermarkter ? data.vermarkter.id : null);
+              if (!isAdmin && targetId) {
                   // Data Partner Login
                   switchTab('dataPartners');
                   document.querySelector('.tabs').style.display = 'none';
                   document.querySelector('.add-btn').style.display = 'none';
                   
                   const itemSel = document.getElementById('itemSelect');
-                  itemSel.value = urlId;
+                  itemSel.value = targetId;
                   itemSel.disabled = true;
                   loadSelectedItem();
-              } else if (isAdmin && urlId) {
+              } else if (isAdmin && targetId) {
                   switchTab('dataPartners');
-                  document.getElementById('itemSelect').value = urlId;
+                  document.getElementById('itemSelect').value = targetId;
                   loadSelectedItem();
               }
           } else {
@@ -350,7 +359,6 @@
   }
 
   function init() {
-    CONFIG = window.OVK_LANDSCAPE_CONFIG;
     if (!window.OVK_LANDSCAPE_CONFIG) {
       alert("Fehler: OVK_LANDSCAPE_CONFIG konnte nicht geladen werden.");
       return;
@@ -380,7 +388,7 @@
 
     if (urlId) {
         const dp = coreConfig.dataPartners.find(d => d.id === urlId);
-        document.getElementById('loginTitle').textContent = dp ? dp.name : 'Data Partner Login';
+        document.getElementById('loginTitle').textContent = dp ? dp.name : `Data Partner Login (${urlId})`;
     } else {
         document.getElementById('loginTitle').textContent = 'OVK Admin Login';
     }
@@ -700,18 +708,21 @@
 
     const titleEl = document.getElementById('previewTitle');
     const subtitleEl = document.getElementById('previewSubtitle');
+    const repoPrefix = (cloudflareRepoInfo && cloudflareRepoInfo.owner && cloudflareRepoInfo.repo)
+      ? `${cloudflareRepoInfo.owner}/${cloudflareRepoInfo.repo}${cloudflareRepoInfo.branch ? '@' + cloudflareRepoInfo.branch : ''}: `
+      : '';
 
     if (activeTab === 'dataPartners') {
-      if (titleEl) titleEl.textContent = 'Vorschau: config/data_partners.js';
-      if (subtitleEl) subtitleEl.innerHTML = 'Generierter Inhalt von <code>config/data_partners.js</code>.';
+      if (titleEl) titleEl.textContent = `Vorschau: ${repoPrefix}${cloudflareDataPartnersFullPath}`;
+      if (subtitleEl) subtitleEl.innerHTML = `Generierter Inhalt von <code>${repoPrefix}${cloudflareDataPartnersFullPath}</code>.`;
 
       const dpObj = coreConfig.dataPartners || [];
       let jsCode = `// OVK ID Landscape Map - Data Partner Konfigurationsdaten\n\nif (!window.OVK_LANDSCAPE_CONFIG) {\n  window.OVK_LANDSCAPE_CONFIG = {};\n}\n\nwindow.OVK_LANDSCAPE_CONFIG.dataPartners = ${JSON.stringify(dpObj, null, 2).replace(/"([^"]+)":/g, '$1:')};\n\n// Für Node.js CommonJS-Umgebung (Validierung)\nif (typeof module !== 'undefined' && module.exports) {\n  module.exports = window.OVK_LANDSCAPE_CONFIG.dataPartners;\n}\n`;
       document.getElementById('codePreview').textContent = jsCode;
 
     } else {
-      if (titleEl) titleEl.textContent = 'Vorschau: config/core.js';
-      if (subtitleEl) subtitleEl.innerHTML = 'Generierter Inhalt der vollständigen <code>config/core.js</code>.';
+      if (titleEl) titleEl.textContent = `Vorschau: ${repoPrefix}${cloudflareCoreFullPath}`;
+      if (subtitleEl) subtitleEl.innerHTML = `Generierter Inhalt der vollständigen <code>${repoPrefix}${cloudflareCoreFullPath}</code>.`;
 
       const outputObj = {
         ids: coreConfig.ids,
@@ -763,7 +774,9 @@
           });
 
           if (res.ok) {
-              statusEl.textContent = "Erfolgreich gespeichert! Die Map wird beim nächsten Neuladen aktualisiert.";
+              const resData = await res.json().catch(() => ({}));
+              const savedTarget = resData.savedPath || (target === 'data_partners' ? cloudflareDataPartnersFullPath : cloudflareCoreFullPath);
+              statusEl.textContent = `Erfolgreich in ${savedTarget} gespeichert! Die Map wird beim nächsten Neuladen aktualisiert.`;
               statusEl.style.color = "#137333";
           } else {
               const errText = await res.text();

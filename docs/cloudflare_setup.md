@@ -79,8 +79,7 @@ Füge nun folgende Variablen hinzu (Wähle immer den Button `Encrypt` aus, damit
 3. Kopiere diese URL! 
 4. Diese URL ist im HTML Editor (`vermarkter_editor.html`) als `WORKER_URL` hinterlegt.
 
-## Schritt 7: Pfad-Synchronisation (Single Source of Truth)
-Der Worker liefert beim Login (`POST /login`) automatisch die autoritativen Pfad-Informationen zurück:
-* Für den Vermarkter: Relativer Pfad (`config/vermarkter/<id>.js`) sowie vollständiger Repository-Pfad inkl. `GITHUB_BASE_PATH`.
-* Für Admins: Vollständige Liste aller aktiven Vermarkter basierend auf den `PWD_*`-Umgebungsvariablen.
-* Der Editor lädt und speichert dadurch garantiert an denselben Pfad, der in Cloudflare hinterlegt ist.
+## Schritt 7: Führendes Ziel-Repository (Single Source of Truth)
+Das in den Cloudflare-Variablen (`GITHUB_OWNER`, `GITHUB_REPO`, `GITHUB_BRANCH`, `GITHUB_BASE_PATH`) angegebene Repository ist führend für alle Konfigurationsdateien (`config/core.js`, `config/data_partners.js`, `config/vermarkter/*.js`):
+* Beim Login (`POST /login`) in `vermarkter_editor.html` und `core_editor.html` sowie über `GET /configs` (für `app.js`) lädt der Cloudflare Worker die Dateien direkt über die GitHub API aus dem Ziel-Repository (z. B. `BVDW-org/ovk-identifiersupport`) und übergibt den aktuellen JS-Code samt Pfad an das Frontend.
+* **Wichtig bei Updates an `docs/gatekeeper_worker.js`:** Da Cloudflare Worker nicht automatisch aus GitHub aktualisiert werden, muss nach einer Änderung an `docs/gatekeeper_worker.js` der gesamte Inhalt der Datei einmalig im Cloudflare Dashboard unter **Edit code** eingefügt und mit **Save and deploy** aktiviert werden.

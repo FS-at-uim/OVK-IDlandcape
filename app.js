@@ -42,6 +42,47 @@ document.addEventListener("DOMContentLoaded", async () => {
   // --- Dynamic Resilient Config Loading & Normalization ---
 
   async function loadConfigData() {
+    const WORKER_URL = "https://ovk-ladscape.friedrich-schenk.workers.dev";
+    let latestTimestamp = 0;
+
+    // 1. Primärquelle: Versuche Konfigurationen direkt aus dem in Cloudflare hinterlegten Ziel-Repository zu laden
+    try {
+      const workerRes = await fetch(`${WORKER_URL}/configs?t=${Date.now()}`);
+      if (workerRes.ok) {
+        const data = await workerRes.json();
+        if (data && data.configs && data.configs.core && data.configs.core.code) {
+          window.OVK_LANDSCAPE_CONFIG = { vermarkter: [] };
+
+          (new Function(data.configs.core.code))();
+
+          if (data.configs.dataPartners && data.configs.dataPartners.code) {
+            (new Function(data.configs.dataPartners.code))();
+          }
+
+          if (!window.OVK_LANDSCAPE_CONFIG.vermarkter) {
+            window.OVK_LANDSCAPE_CONFIG.vermarkter = [];
+          }
+          if (Array.isArray(data.configs.vermarkter)) {
+            for (const vFile of data.configs.vermarkter) {
+              if (vFile && vFile.code) {
+                try {
+                  (new Function(vFile.code))();
+                } catch (err) {
+                  console.error(`Fehler beim Ausführen von ${vFile.fullPath || vFile.id}:`, err);
+                }
+              }
+            }
+          }
+
+          updateConfigStandDate(Date.now());
+          return;
+        }
+      }
+    } catch (workerErr) {
+      console.warn("Cloudflare Worker /configs nicht erreichbar, nutze lokale Konfigurationsdateien als Fallback.", workerErr);
+    }
+
+    // 2. Fallback: Lokale Konfigurationsdateien laden
     let files = [
       "config/core.js",
       "config/data_partners.js"
@@ -75,7 +116,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       ]);
     }
 
-    let latestTimestamp = 0;
+    window.OVK_LANDSCAPE_CONFIG = { vermarkter: [] };
 
     for (const file of files) {
       try {
