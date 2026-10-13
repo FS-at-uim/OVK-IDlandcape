@@ -1,134 +1,107 @@
 # OVK ID Landscape – Administrator-Handbuch
 
-Dieses Handbuch beschreibt, wie Administratoren der **OVK ID Landscape Map** neue Partner anlegen, bestehende Partnerdaten pflegen und Partner-Zugänge verwalten.
+Dieses Handbuch beschreibt, wie Administratoren der **OVK ID Landscape Map** neue Partner anlegen, bestehende Partnerdaten pflegen und Benutzer- sowie Partner-Zugänge verwalten.
 
 ---
 
-## 1. Das zentrale Portal & Zuständigkeiten
+## 1. Das zentrale Portal & Architektur
 
-Das zentrale **OVK Config Portal** vereint alle Bearbeitungs- und Verwaltungsfunktionen in einer einzigen, modernen Oberfläche:
+Das zentrale **OVK Config Portal** (`editor.html`) vereint alle Bearbeitungs- und Verwaltungsfunktionen in einer einzigen, aufgeräumten Oberfläche im offiziellen Design von `tech.ovk.de`:
 
-| Tool | Datei / URL | Zuständigkeit |
+| Komponente | Datei / URL | Zuständigkeit |
 | :--- | :--- | :--- |
-| **Unified Config Portal (Neu)** | [`editor.html`](file:///c:/Users/fschenk/mein-webserver/Identifier/editor.html) | **Zentrales Portal:** Vermarkter, SSPs, DSPs, Data Partner, ID-Kataloge und integrierte Benutzerverwaltung (**Partner-Logins**) |
-| **Legacy Core Editor** | [`core_editor.html`](file:///c:/Users/fschenk/mein-webserver/Identifier/core_editor.html) | Bisheriger Editor für `config/core.js` & `config/data_partners.js` |
-| **Legacy Vermarkter Editor** | [`vermarkter_editor.html`](file:///c:/Users/fschenk/mein-webserver/Identifier/vermarkter_editor.html) | Bisheriger Editor für `config/vermarkter/<id>.js` |
-| **Gatekeeper Worker** | `docs/gatekeeper_worker.js` | Authentifizierung, Git-basierte Auth-Registry, Speichern im führenden BVDW-Repository |
+| **Unified Config Portal** | [`editor.html`](file:///c:/Users/fschenk/mein-webserver/Identifier/editor.html) | **Zentrales Portal:** Vermarkter (Matrix-Tabelle, SSP-Chips), SSPs, DSPs, Data Partner, ID-Kataloge und Multi-Admin-Benutzerverwaltung |
+| **Gatekeeper Worker** | `docs/gatekeeper_worker.js` | Cloudflare Worker mit Git-basierter Auth-Registry, SHA-256 + Salt Verschlüsselung und direkter GitHub-Synchronisation |
+| **Auth-Registry** | `config/auth_registry.json` | Gespeicherte Login-Hashes für Multi-Admin und Partner im Ziel-Repository |
+| **Live Map** | [`index.html`](file:///c:/Users/fschenk/mein-webserver/Identifier/index.html) | Öffentliche Landscape-Visualisierung |
+
+> [!NOTE]
+> **Veröffentlichungszyklus:** Alle über das Portal vorgenommenen Änderungen werden sofort und versionssicher im BVDW-Ziel-Repository committet. In der öffentlich erreichbaren Landscape Map greifen sie automatisch **über Nacht**.
 
 ---
 
-## 2. DSPs, SSPs & Vermarkter im neuen Portal pflegen
+## 2. Multi-Admin & Benutzerverwaltung (Login via E-Mail)
 
-Öffne [`editor.html`](file:///c:/Users/fschenk/mein-webserver/Identifier/editor.html) und melde dich mit dem **Admin-Passwort** an. Als Administrator stehen dir alle Tabs zur Verfügung:
+Das Portal unterstützt **mehrere vollwertige Administratoren**, die sich jeweils mit ihrer persönlichen **E-Mail-Adresse** und einem eigenen Passwort anmelden können. Neue Admins und Partner-Logins können direkt aus der Oberfläche heraus angelegt werden, ohne dass ein Zugriff auf das Cloudflare-Dashboard erforderlich ist.
 
-1. **🏷️ Vermarkter:** Wähle einen bestehenden Vermarkter aus dem Dropdown oder klicke auf `+ Neu anlegen`. Passe Name, Beschreibung (max 65 Zeichen), Inventartypen, Coverage-Werte, DSP-Ausschlüsse und SSP-Opt-Ins an.
-2. **⚡ SSPs:** Pflege Name, Kategorie (*Standard SSP* vs. *Curation SSP*), unterstützte IDs und Usecases.
-3. **🎯 DSPs:** Pflege Name, Logo-Kürzel, IDs, Usecases und kompatible SSPs.
-4. **📊 Data Partner:** Pflege Datenpartner, unterstützte IDs, DSPs und Curation-SSPs.
-5. **👤 Partner-Logins:** Lege Zugänge für Partner direkt an (siehe Abschnitt 5).
+### A. Neuen Administrator anlegen
+1. Melde dich als bestehender Administrator in [`editor.html`](file:///c:/Users/fschenk/mein-webserver/Identifier/editor.html) an.
+2. Wechsle auf den Tab **„👤 Benutzer & Logins“**.
+3. Fülle das Formular aus:
+   * **E-Mail-Adresse (Login-Kennung):** E-Mail-Adresse des neuen Admins (z. B. `vorname.nachname@ovk.de`).
+   * **Rolle:** Wähle `👑 Administrator (Vollzugriff)`. *(Das Feld „Zugehörige Partner-ID“ wird automatisch ausgeblendet, da Admins globalen Zugriff haben.)*
+   * **Name / Organisation:** Vollständiger Name des Administrators.
+   * **Passwort:** Vergib ein sicheres Passwort oder klicke auf `🎲 Generieren`.
+4. Klicke auf **`💾 Benutzer speichern`**.
+5. Der Zugang ist sofort aktiv und wird kryptografisch sicher (SHA-256 + 16-Byte Salt + Worker-Pepper) in `config/auth_registry.json` im BVDW-Repository persistiert.
 
-### A. Neuen DSP / SSP anlegen
-1. Klicke auf den Tab **DSPs** bzw. **SSPs**.
-2. Klicke oben rechts auf den blauen Button **`+ Neu erstellen`**.
-3. Gib eine eindeutige technische ID ein (z. B. `ttd`, `adform`, `pubmatic` – Kleinbuchstaben, keine Sonderzeichen).
-4. Fülle die Metadaten aus:
-   * **Name & Logo**: Anzeigename und Kürzel.
-   * **Kategorie (nur SSPs)**: `Standard SSP` (leitet IDs durch) oder `Curation SSP` (Targeting/FC möglich).
-   * **Unterstützte Usecases & IDs**: Relevante Checkboxen aktivieren.
-   * **Kompatible SSPs / Vermarkter**: Verknüpfungen mit angebundenen Systemen setzen.
-5. Klicke unten auf **`Speichern / Übernehmen`**.
-6. Klicke in der rechten Spalte auf **`Änderungen speichern & veröffentlichen`**.
+### B. Partner-Login anlegen (Vermarkter, SSP, DSP, Data Partner)
+1. Wähle im Tab **„👤 Benutzer & Logins“** die entsprechende Rolle aus (z. B. `🏷️ Vermarkter` oder `⚡ Supply-Side-Plattform`).
+2. Gib die E-Mail-Adresse des Partners und die **technische Partner-ID** ein (z. B. `uim`, `magnite`, `ttd`).
+3. Vergib ein Passwort und klicke auf **`💾 Benutzer speichern`**.
+4. Teile dem Partner die Login-URL `https://<domain>/editor.html` (oder mit Vorbelegung `editor.html?id=<partnerId>`), seine E-Mail-Adresse/ID und sein Passwort mit.
+5. **Partner-Ansicht:** Der Partner sieht nach dem Login ausschließlich seinen eigenen Bereich (keine fremden Daten, kein technischer JavaScript-Code) und kann seine Inventare, Coverage-Werte oder ID-Freigaben eigenständig pflegen.
 
-### B. Bestehenden DSP / SSP bearbeiten
-1. Wähle im Dropdown **"Eintrag auswählen"** den gewünschten Partner.
-2. Passe die Felder und Checkboxen an.
-3. Klicke auf **`Speichern / Übernehmen`** und anschließend rechts auf **`Änderungen speichern & veröffentlichen`**.
+### C. Passwörter ändern oder Accounts löschen
+* In der Tabelle **„Aktive Benutzer- und Partner-Accounts“** kann bei jedem Eintrag über **`🔑 Ändern`** ein neues Passwort vergeben oder über **`🗑️ Löschen`** der Zugang dauerhaft entfernt werden.
 
 ---
 
-## 3. Data Partner anlegen & pflegen
+## 3. Vermarkter pflegen & neu anlegen
 
-1. Öffne [`core_editor.html`](file:///c:/Users/fschenk/mein-webserver/Identifier/core_editor.html) und melde dich als Admin an.
-2. Wechsle auf den Tab **Data Partners**.
-3. **Neuer Data Partner:**
-   * Klicke auf **`+ Neu erstellen`** und gib die technische ID ein (z. B. `mein_partner_data`).
-   * Wähle die unterstützten ID-Systeme, DSPs und Curation-SSPs aus.
-   * Klicke auf **`Speichern / Übernehmen`** und rechts auf **`Änderungen speichern & veröffentlichen`**.
-4. **Passwort vergeben:** Lege im Cloudflare Dashboard das Passwort `PWD_<id>` an (siehe Abschnitt 5).
-5. **Partner-Link bereitstellen:** Übergib dem Partner den Direktlink `core_editor.html?id=<id>` und sein Passwort.
+Vermarkter konfigurieren ihre ID-Bereitstellung über eine kompakte **Coverage-Matrix**:
 
----
+### A. Basisdaten
+* **Offizieller Name:** z. B. `United Internet Media`.
+* **Kurzbeschreibung (wird in der Landscape angezeigt):** Maximal **65 Zeichen** (mit integriertem Live-Zeichenzähler).
 
-## 4. Vermarkter anlegen & pflegen
+### B. Coverage-Matrix (Inventartypen & ID-Coverage)
+Die Matrix umfasst standardmäßig 4 Inventargattungen:
+1. `💻 Desktop`
+2. `📱 Mobile Web`
+3. `📲 In-App`
+4. `📺 Connected TV (CTV)`
 
-### A. Neuen Vermarkter vollständig einrichten (3 Schritte)
+* **Aktivierungs-Schalter:** Schalte Gattungen, in denen kein Inventar bereitgestellt wird, einfach aus (Eingabefelder werden deaktiviert).
+* **ID-Coverage (%):** Trage pro ID-System (z. B. Utiq, netID) die Reichweite in Prozent (0–100%) ein (*„Für wie viel % der Requests im programmatischen Ökosystem wird die ID übergeben?“*).
+* **DSP-Ausschlüsse (`⚙️ DSPs ausschließen`):**
+  > [!IMPORTANT]
+  > Wähle eine DSP in diesem Flyout **nur dann aus**, wenn eine Weitergabe der ID durch diese DSP **ausdrücklich ausgeschlossen** werden soll.
 
-1. **Schritt 1: Passwort im Cloudflare Worker anlegen**
-   * Öffne das Cloudflare Dashboard -> **Workers & Pages** -> Worker auswählen -> **Settings** -> **Variables**.
-   * Lege eine verschlüsselte Variable an:
-     * **Name:** `PWD_<vermarkterId>` (z. B. `PWD_meinvermarkter`)
-     * **Value:** Sicheres Passwort für diesen Vermarkter.
-   * Klicke auf **Save and deploy**.
-
-2. **Schritt 2: Initiale Konfigurationsdatei im Repository anlegen**
-   * Im führenden GitHub-Repository (`BVDW-org/ovk-identifiersupport`) unter `tools/identifier-landscape/config/vermarkter/<vermarkterId>.js` die Basiskonfiguration ablegen:
-     ```javascript
-     if (!window.OVK_LANDSCAPE_CONFIG) {
-       window.OVK_LANDSCAPE_CONFIG = {};
-     }
-     if (!window.OVK_LANDSCAPE_CONFIG.vermarkter) {
-       window.OVK_LANDSCAPE_CONFIG.vermarkter = [];
-     }
-
-     window.OVK_LANDSCAPE_CONFIG.vermarkter.push({
-       id: "meinvermarkter",
-       name: "Mein Vermarkter Name",
-       description: "Kurzbeschreibung",
-       supportedInventoryTypes: [],
-       supportedSSPs: []
-     });
-     ```
-   * *Hinweis:* Alternativ kann der Admin die Datei nach dem Setzen des Passworts direkt über den Vermarkter-Editor konfigurieren und speichern.
-
-3. **Schritt 3: Verknüpfungen in `core.js` aktivieren**
-   * Öffne [`core_editor.html`](file:///c:/Users/fschenk/mein-webserver/Identifier/core_editor.html).
-   * Gehe in die Tabs **DSPs** und **SSPs** und aktiviere bei den angebundenen Partnern die Checkbox für den neuen Vermarkter.
-   * Klicke auf **`Änderungen speichern & veröffentlichen`**.
-
-4. **Schritt 4: Übergabe an den Vermarkter**
-   * Sende dem Vermarkter seinen Link:
-     `https://<domain>/vermarkter_editor.html?id=<vermarkterId>`
-   * Teile ihm sein in Schritt 1 vergebenes Passwort mit.
-
-### B. Bestehenden Vermarkter als Admin bearbeiten
-1. Öffne [`vermarkter_editor.html`](file:///c:/Users/fschenk/mein-webserver/Identifier/vermarkter_editor.html) (ohne `?id=...`).
-2. Gib das **Admin-Passwort** ein.
-3. Als Admin ist das Dropdown freigeschaltet – wähle den gewünschten Vermarkter aus.
-4. Passe Inventartypen, Coverage-Werte oder SSP-Opt-Ins an.
-5. Klicke auf **`Änderungen speichern & veröffentlichen`**.
+### C. SSP Freischaltungen (Opt-Ins)
+* Klicke auf die interaktiven **Pill-Chips** der Supply-Side-Plattformen, um anzuzeigen, über welche SSPs das Vermarkter-Inventar angebunden ist (blau mit Häkchen = aktiv, grau = inaktiv).
 
 ---
 
-## 5. Passwörter & Benutzerverwaltung (Ohne Cloudflare-Dashboard)
+## 4. SSPs, DSPs und Data Partner verwalten
 
-Mit dem aktualisierten Gatekeeper Worker (**Phase 1**) müssen Passwörter für Partner nicht mehr manuell als Secrets im Cloudflare-Dashboard hinterlegt werden:
+Als Administrator kannst du im oberen Tab-Menü direkt zwischen allen Partnergruppen wechseln:
 
-### A. Automatische Partner-Auth-Registry (Empfohlen)
-* Die Partner-Accounts werden geschützt in `config/auth_registry.json` im Ziel-Repository geführt.
-* Passwörter werden mit **SHA-256 + individuellem Salt + Worker-Pepper** kryptografisch gehasht. Im öffentlichen GitHub-Repository sind keine Klartext-Passwörter sichtbar.
-* Der Administrator kann Partner-Logins über die Admin-Schnittstelle anlegen, aktualisieren und löschen (`POST /admin/save-partner-auth` und `POST /admin/delete-partner-auth`).
+### A. Supply-Side-Plattformen (SSPs)
+* **Kategorie:** Unterscheidung zwischen `Standard SSP` (leitet IDs durch) und `Curation SSP` (Targeting / Deal IDs / Frequency Capping).
+* **ID-Systeme & Usecases:** Per Klick auf die entsprechenden Chips zuweisen.
 
-### B. Legacy Fallback (Cloudflare Secrets)
-Bestehende, in Cloudflare hinterlegte Secrets bleiben weiterhin voll funktionsfähig:
-* **Admin-Passwort:** Umgebungsvariable `ADMIN_PASSWORD` (berechtigt zur Bearbeitung aller Editoren und Partner).
-* **Vermarkter-Passwörter:** Variable `PWD_<vermarkterId>` (z. B. `PWD_uim`, `PWD_stroeer`).
-* **Data-Partner-Passwörter:** Variable `PWD_<dataPartnerId>` (z. B. `PWD_iq_data`).
+### B. Demand-Side-Plattformen (DSPs)
+* Name, Logo-Kürzel, unterstützte ID-Systeme, Usecases und kompatible SSPs über die Chip-Cloud pflegen.
 
-### C. Repository-Verbindung in Cloudflare
-Die Verbindung zum führenden BVDW-Repository erfolgt unverändert über die Cloudflare Environment-Variablen:
-* `GITHUB_OWNER`: z. B. `BVDW-org`
-* `GITHUB_REPO`: z. B. `ovk-identifiersupport`
-* `GITHUB_BRANCH`: `main`
-* `GITHUB_BASE_PATH`: z. B. `tools/identifier-landscape`
-* `GITHUB_TOKEN`: GitHub Personal Access Token (PAT) mit `repo`-Scope.
+### C. Data Partner
+* Name, Beschreibung, ID-Systeme, angebundene DSPs und Curation-SSPs definieren.
 
+### D. ID-Systeme & Usecase-Kataloge (Core)
+* Im Tab **„🆔 IDs & Usecases“** können die zentralen Core-Definitionen eingesehen und im Bedarfsfall gesamthaft aktualisiert werden.
+
+---
+
+## 5. Technische Konfiguration (Cloudflare Worker)
+
+Der Worker benötigt im Cloudflare Dashboard folgende Environment-Variablen (Single Source of Truth):
+
+| Variable | Beschreibung | Beispielwert |
+| :--- | :--- | :--- |
+| `GITHUB_OWNER` | GitHub Organisations- oder Benutzername | `BVDW-org` |
+| `GITHUB_REPO` | Repository-Name | `ovk-identifiersupport` |
+| `GITHUB_BRANCH` | Ziel-Branch für Commits | `main` |
+| `GITHUB_BASE_PATH` | Basispfad innerhalb des Repositories | `tools/identifier-landscape` |
+| `GITHUB_TOKEN` | GitHub Personal Access Token (PAT) mit Schreibrechten (`repo`-Scope) | `ghp_...` |
+| `ADMIN_PASSWORD` | Master-Admin-Passwort (Notfall-Fallback) | `...` |
+| `AUTH_SALT` | Optional: Geheimer Pepper für SHA-256 Hashing | `...` |

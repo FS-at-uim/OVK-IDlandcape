@@ -239,6 +239,8 @@ export default {
 
       const body = await request.json();
       const {
+        email,
+        username,
         vermarkterId,
         password,
         code,
@@ -255,46 +257,71 @@ export default {
         });
       }
 
-      const isAdmin = Boolean(env.ADMIN_PASSWORD && password === env.ADMIN_PASSWORD);
+      const loginIdentifier = (email || username || inputPartnerId || vermarkterId || '').trim();
+      const loginIdentifierLower = loginIdentifier.toLowerCase();
+
+      // Check Master Admin Password (aus Environment)
+      let isAdmin = Boolean(env.ADMIN_PASSWORD && password === env.ADMIN_PASSWORD);
       let authRole = isAdmin ? 'admin' : null;
-      let authPartnerId = isAdmin ? 'admin' : (inputPartnerId || vermarkterId);
-      let authPartnerName = isAdmin ? 'Administrator' : null;
+      let authPartnerId = isAdmin ? 'admin' : null;
+      let authPartnerName = isAdmin ? 'Master Administrator' : null;
+      let authEmail = isAdmin ? (env.ADMIN_EMAIL || 'admin@ovk.de') : null;
 
       // 1. Authentifizierung über auth_registry.json im GitHub-Repo prüfen
       const authRegistry = await loadAuthRegistry();
+      let matchedAccount = null;
+      let matchedKey = null;
+
       if (!isAdmin) {
-        // Falls spezifische ID übergeben wurde
-        if (authPartnerId && authPartnerId !== 'admin' && authRegistry.partners[authPartnerId]) {
-          const p = authRegistry.partners[authPartnerId];
-          const calculatedHash = await hashPassword(password, p.salt);
-          if (calculatedHash === p.hash) {
-            authRole = p.role;
-            authPartnerName = p.name;
+        // Falls spezifische ID oder E-Mail übergeben wurde
+        if (loginIdentifierLower && loginIdentifierLower !== 'admin') {
+          for (const [accId, accData] of Object.entries(authRegistry.partners)) {
+            const accEmailLower = (accData.email || '').toLowerCase();
+            if (accId.toLowerCase() === loginIdentifierLower || accEmailLower === loginIdentifierLower) {
+              const calculatedHash = await hashPassword(password, accData.salt);
+              if (calculatedHash === accData.hash) {
+                matchedAccount = accData;
+                matchedKey = accId;
+                break;
+              }
+            }
           }
-        } else {
-          // Passwort mit allen Partner-Hashes abgleichen (Auto-Erkennung)
-          for (const [pId, pData] of Object.entries(authRegistry.partners)) {
-            const calculatedHash = await hashPassword(password, pData.salt);
-            if (calculatedHash === pData.hash) {
-              authPartnerId = pId;
-              authRole = pData.role;
-              authPartnerName = pData.name;
+        }
+
+        // Falls keine spezifische Kennung passte oder nur Passwort übergeben wurde (Auto-Erkennung)
+        if (!matchedAccount) {
+          for (const [accId, accData] of Object.entries(authRegistry.partners)) {
+            const calculatedHash = await hashPassword(password, accData.salt);
+            if (calculatedHash === accData.hash) {
+              matchedAccount = accData;
+              matchedKey = accId;
               break;
             }
+          }
+        }
+
+        if (matchedAccount) {
+          authRole = matchedAccount.role;
+          authPartnerName = matchedAccount.name || matchedKey;
+          authPartnerId = matchedAccount.partnerId || (authRole !== 'admin' ? matchedKey : 'admin');
+          authEmail = matchedAccount.email || (matchedKey.includes('@') ? matchedKey : null);
+          if (authRole === 'admin') {
+            isAdmin = true;
           }
         }
       }
 
       // 2. Fallback: Authentifizierung über Cloudflare Environment-Variablen (PWD_* / VERMARKTER_PASSWORDS)
       if (!isAdmin && !authRole) {
+        let fallbackId = loginIdentifierLower || null;
         const passwords = JSON.parse(env.VERMARKTER_PASSWORDS || '{}');
-        let expectedPassword = authPartnerId ? (env[`PWD_${authPartnerId}`] || passwords[authPartnerId]) : undefined;
+        let expectedPassword = fallbackId ? (env[`PWD_${fallbackId}`] || passwords[fallbackId]) : undefined;
 
         if (!expectedPassword) {
           if (env) {
             for (const key of Object.keys(env)) {
               if (key.startsWith('PWD_') && env[key] === password) {
-                authPartnerId = key.replace(/^PWD_/, '');
+                fallbackId = key.replace(/^PWD_/, '');
                 expectedPassword = env[key];
                 break;
               }
@@ -303,7 +330,7 @@ export default {
           if (!expectedPassword && passwords) {
             for (const [idKey, pwdVal] of Object.entries(passwords)) {
               if (pwdVal === password) {
-                authPartnerId = idKey;
+                fallbackId = idKey;
                 expectedPassword = pwdVal;
                 break;
               }
@@ -312,32 +339,34 @@ export default {
         }
 
         if (expectedPassword && expectedPassword === password) {
-          authRole = authPartnerId.endsWith('_data') ? 'data_partner' : 'vermarkter';
-          authPartnerName = authPartnerId;
+          authRole = fallbackId.endsWith('_data') ? 'data_partner' : 'vermarkter';
+          authPartnerId = fallbackId;
+          authPartnerName = fallbackId;
         }
       }
 
       if (!isAdmin && !authRole) {
-        return new Response(JSON.stringify({ error: 'Falsches Passwort' }), {
+        return new Response(JSON.stringify({ error: 'Falsches Passwort oder ungültige Benutzerdaten' }), {
           status: 401,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         });
       }
 
       // -------------------------------------------------------------
-      // Route: POST /admin/save-partner-auth (Admin legt Partner-Login an / ändert Passwort)
+      // Route: POST /admin/save-partner-auth (Admin legt Partner-/Admin-Login an / ändert Passwort)
       // -------------------------------------------------------------
       if (url.pathname === '/admin/save-partner-auth') {
         if (!isAdmin) {
-          return new Response(JSON.stringify({ error: 'Nur Admins können Partner-Logins anlegen' }), {
+          return new Response(JSON.stringify({ error: 'Nur Admins können Logins verwalten' }), {
             status: 403,
             headers: { ...corsHeaders, 'Content-Type': 'application/json' }
           });
         }
 
-        const { targetPartnerId, role: newRole, name: newName, newPassword } = body;
-        if (!targetPartnerId || !newPassword || !newRole) {
-          return new Response(JSON.stringify({ error: 'Fehlende Parameter (targetPartnerId, role, newPassword)' }), {
+        const { targetPartnerId, email: newEmail, role: newRole, name: newName, newPassword } = body;
+        const finalKey = (targetPartnerId || newEmail || '').trim().toLowerCase();
+        if (!finalKey || !newPassword || !newRole) {
+          return new Response(JSON.stringify({ error: 'Fehlende Parameter (E-Mail/ID, Rolle, Passwort)' }), {
             status: 400,
             headers: { ...corsHeaders, 'Content-Type': 'application/json' }
           });
@@ -346,20 +375,22 @@ export default {
         const salt = generateSalt();
         const hash = await hashPassword(newPassword, salt);
 
-        authRegistry.partners[targetPartnerId] = {
+        authRegistry.partners[finalKey] = {
           role: newRole,
-          name: newName || targetPartnerId,
+          name: newName || (newEmail ? newEmail.split('@')[0] : finalKey),
+          email: newEmail || (finalKey.includes('@') ? finalKey : undefined),
+          partnerId: newRole !== 'admin' ? (targetPartnerId || finalKey) : undefined,
           salt,
           hash,
           updatedAt: new Date().toISOString()
         };
 
-        await saveAuthRegistry(authRegistry, `Admin: Update Auth für Partner ${targetPartnerId}`);
+        await saveAuthRegistry(authRegistry, `Admin: Update Auth für ${newRole} ${finalKey}`);
 
         return new Response(JSON.stringify({
           success: true,
-          message: `Login für ${newName || targetPartnerId} erfolgreich gespeichert!`,
-          partnerId: targetPartnerId,
+          message: `Login für ${newName || finalKey} (${newRole}) erfolgreich gespeichert!`,
+          partnerId: finalKey,
           role: newRole
         }), {
           status: 200,
@@ -419,12 +450,14 @@ export default {
           }
         }
 
-        // Sanitized Partner-Liste für Admin-Oberfläche (ohne Hashes & Salts)
+        // Sanitized Benutzer- und Partner-Liste für Admin-Oberfläche (ohne Hashes & Salts)
         const sanitizedAuthPartners = isAdmin
           ? Object.entries(authRegistry.partners).map(([id, p]) => ({
               id,
               role: p.role,
               name: p.name,
+              email: p.email || (id.includes('@') ? id : ''),
+              partnerId: p.partnerId || (p.role !== 'admin' ? id : null),
               updatedAt: p.updatedAt
             }))
           : undefined;
@@ -435,6 +468,7 @@ export default {
           role: authRole,
           partnerId: authPartnerId,
           partnerName: authPartnerName,
+          email: authEmail,
           basePath,
           repository: {
             owner,
