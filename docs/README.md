@@ -132,6 +132,7 @@ Das Projekt bietet ein modernes, zentrales Web-Portal zur rollenbasierten Pflege
 
 - **[`editor.html`](editor.html)**: **Zentrales OVK Config Portal**
   - **Multi-Admin-Zugang via E-Mail** & integrierte Benutzerverwaltung (ohne Cloudflare-Dashboard).
+  - **Multi-Role Profil-Picker (Option A):** Bei identischer E-Mail-Adresse für mehrere Rollen (z. B. Admin & Vermarkter) interaktive Profilauswahl beim Login zur strikten Rechte-Trennung.
   - **Vermarkter-Ansicht:** Ergonomische Coverage-Matrix für 4 Inventartypen (Desktop, Mobile Web, In-App, CTV), 65-Zeichen-Limit für Beschreibungen, DSP-Ausschlüsse und SSP-Opt-In-Chips.
   - **Partner-Ansichten (SSPs, DSPs, Data Partner):** Aufgeräumte Formulare ohne technischen JavaScript-Code.
   - **Sicherheit & Git-Sync:** Synchronisation über den Gatekeeper Worker (`docs/gatekeeper_worker.js`) mit SHA-256 + Salt Verschlüsselung (`config/auth_registry.json`).

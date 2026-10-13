@@ -247,6 +247,7 @@ export default {
         data,
         target = 'vermarkter',
         partnerId: inputPartnerId,
+        selectedProfileKey,
         loadAllVermarkter = false
       } = body;
 
@@ -268,36 +269,92 @@ export default {
 
       // 1. ZUERST: Authentifizierung über auth_registry.json im GitHub-Repo prüfen
       const authRegistry = await loadAuthRegistry();
-      let matchedAccount = null;
-      let matchedKey = null;
 
-      // Wenn eine spezifische Kennung (E-Mail oder Partner-ID) übergeben wurde
-      if (loginIdentifierLower && loginIdentifierLower !== 'admin') {
+      // Fall A: Spezifischer Profil-Schlüssel wurde übergeben (nach Rollenauswahl)
+      if (selectedProfileKey && authRegistry.partners[selectedProfileKey]) {
+        const acc = authRegistry.partners[selectedProfileKey];
+        const calculatedHash = await hashPassword(password, acc.salt);
+        if (calculatedHash === acc.hash) {
+          authRole = acc.role;
+          authPartnerName = acc.name || selectedProfileKey;
+          authPartnerId = acc.partnerId || (acc.role !== 'admin' ? selectedProfileKey : 'admin');
+          authEmail = acc.email || (selectedProfileKey.includes('@') ? selectedProfileKey.split(':')[0] : null);
+          isAdmin = (authRole === 'admin');
+        } else {
+          return new Response(JSON.stringify({ error: 'Falsches Passwort für dieses Profil' }), {
+            status: 401,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          });
+        }
+      }
+
+      // Fall B: Normale Anmeldung mit Kennung (E-Mail oder Partner-ID)
+      if (!authRole && loginIdentifierLower) {
+        const matchingEntries = [];
         for (const [accId, accData] of Object.entries(authRegistry.partners)) {
           const accEmailLower = (accData.email || '').toLowerCase();
           const accPartnerIdLower = (accData.partnerId || '').toLowerCase();
-          if (accId.toLowerCase() === loginIdentifierLower || accEmailLower === loginIdentifierLower || accPartnerIdLower === loginIdentifierLower) {
-            matchedAccount = accData;
-            matchedKey = accId;
-            break;
+          if (
+            accId.toLowerCase() === loginIdentifierLower ||
+            accEmailLower === loginIdentifierLower ||
+            accPartnerIdLower === loginIdentifierLower ||
+            accId.toLowerCase().startsWith(loginIdentifierLower + ':')
+          ) {
+            matchingEntries.push({ key: accId, data: accData });
           }
         }
 
-        // Falls ein konkreter Account gefunden wurde, MUSS das Passwort für DIESEN Account stimmen
-        if (matchedAccount) {
-          const calculatedHash = await hashPassword(password, matchedAccount.salt);
-          if (calculatedHash === matchedAccount.hash) {
-            authRole = matchedAccount.role;
-            authPartnerName = matchedAccount.name || matchedKey;
-            authPartnerId = matchedAccount.partnerId || (authRole !== 'admin' ? matchedKey : 'admin');
-            authEmail = matchedAccount.email || (matchedKey.includes('@') ? matchedKey : null);
-            isAdmin = (authRole === 'admin');
-          } else {
-            return new Response(JSON.stringify({ error: 'Falsches Passwort für diesen Benutzer' }), {
-              status: 401,
+        if (matchingEntries.length > 0) {
+          const validProfiles = [];
+          for (const item of matchingEntries) {
+            const calculatedHash = await hashPassword(password, item.data.salt);
+            if (calculatedHash === item.data.hash) {
+              validProfiles.push({
+                profileKey: item.key,
+                role: item.data.role,
+                name: item.data.name || item.key,
+                email: item.data.email || (item.key.includes('@') ? item.key.split(':')[0] : loginIdentifier),
+                partnerId: item.data.partnerId || (item.data.role !== 'admin' ? item.key : 'admin')
+              });
+            }
+          }
+
+          if (validProfiles.length === 0) {
+            const isMasterAdminCall = (!loginIdentifierLower || loginIdentifierLower === 'admin' || loginIdentifierLower === (env.ADMIN_EMAIL || 'admin@ovk.de').toLowerCase());
+            if (isMasterAdminCall && env.ADMIN_PASSWORD && password === env.ADMIN_PASSWORD) {
+              isAdmin = true;
+              authRole = 'admin';
+              authPartnerId = 'admin';
+              authPartnerName = 'Master Administrator';
+              authEmail = env.ADMIN_EMAIL || 'admin@ovk.de';
+            } else {
+              return new Response(JSON.stringify({ error: 'Falsches Passwort für diesen Benutzer' }), {
+                status: 401,
+                headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+              });
+            }
+          }
+
+          // Option A: Wenn DIESELBE E-Mail mehrere Rollen/Profile mit gültigem Passwort besitzt -> Auswahl zurückgeben!
+          if (validProfiles.length > 1) {
+            return new Response(JSON.stringify({
+              success: true,
+              requireProfileSelection: true,
+              email: loginIdentifier,
+              profiles: validProfiles
+            }), {
+              status: 200,
               headers: { ...corsHeaders, 'Content-Type': 'application/json' }
             });
           }
+
+          // Genau 1 Profil passt eindeutig
+          const single = validProfiles[0];
+          authRole = single.role;
+          authPartnerName = single.name;
+          authPartnerId = single.partnerId;
+          authEmail = single.email || loginIdentifier;
+          isAdmin = (authRole === 'admin');
         }
       }
 
@@ -354,7 +411,7 @@ export default {
             authRole = accData.role;
             authPartnerName = accData.name || accId;
             authPartnerId = accData.partnerId || (authRole !== 'admin' ? accId : 'admin');
-            authEmail = accData.email || (accId.includes('@') ? accId : null);
+            authEmail = accData.email || (accId.includes('@') ? accId.split(':')[0] : null);
             isAdmin = (authRole === 'admin');
             break;
           }
@@ -379,8 +436,21 @@ export default {
           });
         }
 
-        const { targetPartnerId, email: newEmail, role: newRole, name: newName, newPassword } = body;
-        const finalKey = (newEmail || targetPartnerId || '').trim().toLowerCase();
+        const { targetPartnerId, email: newEmail, role: newRole, name: newName, newPassword, profileKey: inputProfileKey } = body;
+        const cleanEmail = (newEmail || '').trim().toLowerCase();
+        const cleanPartnerId = (targetPartnerId || '').trim().toLowerCase();
+
+        // Profil-Schlüssel: eindeutig pro E-Mail und Rolle/Partner
+        let finalKey = inputProfileKey || '';
+        if (!finalKey) {
+          if (newRole === 'admin') {
+            finalKey = cleanEmail ? `${cleanEmail}:admin` : 'admin';
+          } else {
+            finalKey = cleanEmail ? `${cleanEmail}:${newRole}:${cleanPartnerId}` : cleanPartnerId;
+          }
+        }
+        finalKey = finalKey.trim().toLowerCase();
+
         if (!finalKey || !newPassword || !newRole) {
           return new Response(JSON.stringify({ error: 'Fehlende Parameter (E-Mail/ID, Rolle, Passwort)' }), {
             status: 400,
@@ -393,9 +463,9 @@ export default {
 
         authRegistry.partners[finalKey] = {
           role: newRole,
-          name: newName || (newEmail ? newEmail.split('@')[0] : finalKey),
-          email: newEmail || (finalKey.includes('@') ? finalKey : undefined),
-          partnerId: newRole !== 'admin' ? (targetPartnerId || finalKey) : undefined,
+          name: newName || (cleanEmail ? cleanEmail.split('@')[0] : finalKey),
+          email: cleanEmail || undefined,
+          partnerId: newRole !== 'admin' ? (cleanPartnerId || finalKey) : undefined,
           salt,
           hash,
           updatedAt: new Date().toISOString()
@@ -406,7 +476,8 @@ export default {
         return new Response(JSON.stringify({
           success: true,
           message: `Login für ${newName || finalKey} (${newRole}) erfolgreich gespeichert!`,
-          partnerId: finalKey,
+          profileKey: finalKey,
+          partnerId: cleanPartnerId,
           role: newRole
         }), {
           status: 200,
@@ -425,8 +496,8 @@ export default {
           });
         }
 
-        const { targetPartnerId } = body;
-        const deleteKey = (targetPartnerId || '').trim().toLowerCase();
+        const { targetPartnerId, profileKey } = body;
+        const deleteKey = (profileKey || targetPartnerId || '').trim().toLowerCase();
         let foundKey = null;
         for (const [k, p] of Object.entries(authRegistry.partners)) {
           if (k.toLowerCase() === deleteKey || (p.email && p.email.toLowerCase() === deleteKey)) {
@@ -479,9 +550,10 @@ export default {
         const sanitizedAuthPartners = isAdmin
           ? Object.entries(authRegistry.partners).map(([id, p]) => ({
               id,
+              profileKey: id,
               role: p.role,
               name: p.name,
-              email: p.email || (id.includes('@') ? id : ''),
+              email: p.email || (id.includes('@') ? id.split(':')[0] : ''),
               partnerId: p.partnerId || (p.role !== 'admin' ? id : null),
               updatedAt: p.updatedAt
             }))

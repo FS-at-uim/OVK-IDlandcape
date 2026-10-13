@@ -541,6 +541,72 @@
       margin-bottom: 4px;
     }
 
+    /* Profile Picker Styles (Option A) */
+    .profile-card-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin: 18px 0;
+      text-align: left;
+    }
+    .profile-card-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 14px;
+      border: 1.5px solid var(--color-border);
+      border-radius: 8px;
+      background: #ffffff;
+      cursor: pointer;
+      transition: all 0.15s ease-in-out;
+    }
+    .profile-card-item:hover {
+      border-color: var(--color-ovk-blue);
+      background: #f0f7ff;
+      transform: translateY(-1px);
+      box-shadow: var(--shadow-sm);
+    }
+    .profile-card-icon {
+      font-size: 1.5rem;
+      flex-shrink: 0;
+      width: 36px;
+      height: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #f8fafc;
+      border-radius: 6px;
+      border: 1px solid var(--color-border);
+    }
+    .profile-card-info {
+      flex: 1;
+      min-width: 0;
+    }
+    .profile-card-title {
+      font-weight: 700;
+      font-size: 0.92rem;
+      color: var(--color-text-charcoal);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 6px;
+    }
+    .profile-card-subtitle {
+      font-size: 0.78rem;
+      color: var(--color-text-muted);
+      margin-top: 2px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .profile-card-arrow {
+      font-size: 1.1rem;
+      color: #94a3b8;
+    }
+    .profile-card-item:hover .profile-card-arrow {
+      color: var(--color-ovk-blue);
+    }
+
     /* Modal Help */
     #helpModal {
       position: fixed;
@@ -578,28 +644,46 @@
   <!-- Fullscreen Login Overlay -->
   <div id="loginOverlay">
     <div class="login-box">
-      <div class="login-logo">OVK ID Landscape</div>
-      <h2 id="loginTitle" style="font-size: 1.15rem; color: #1e293b; margin-bottom: 6px;">Config Portal Login</h2>
-      <p id="loginSubtitle" style="color: var(--color-text-muted); font-size: 0.85rem; margin-bottom: 22px;">
-        Bitte melde dich mit deiner E-Mail-Adresse oder Partner-ID an.
-      </p>
+      <!-- Standard Login Formular -->
+      <div id="loginFormSection">
+        <div class="login-logo">OVK ID Landscape</div>
+        <h2 id="loginTitle" style="font-size: 1.15rem; color: #1e293b; margin-bottom: 6px;">Config Portal Login</h2>
+        <p id="loginSubtitle" style="color: var(--color-text-muted); font-size: 0.85rem; margin-bottom: 22px;">
+          Bitte melde dich mit deiner E-Mail-Adresse oder Partner-ID an.
+        </p>
 
-      <div class="form-group" style="text-align: left; margin-bottom: 14px;">
-        <label for="loginIdentifier">E-Mail / Benutzername / Partner-ID</label>
-        <input type="text" id="loginIdentifier" placeholder="z. B. admin@ovk.de oder uim" onkeydown="if(event.key==='Enter') performLogin()">
+        <div class="form-group" style="text-align: left; margin-bottom: 14px;">
+          <label for="loginIdentifier">E-Mail / Benutzername / Partner-ID</label>
+          <input type="text" id="loginIdentifier" placeholder="z. B. admin@ovk.de oder uim" onkeydown="if(event.key==='Enter') performLogin()">
+        </div>
+
+        <div class="form-group" style="text-align: left; margin-bottom: 20px;">
+          <label for="loginPassword">Passwort</label>
+          <input type="password" id="loginPassword" placeholder="Passwort eingeben" onkeydown="if(event.key==='Enter') performLogin()">
+        </div>
+
+        <button type="button" class="btn btn-primary" id="loginBtn" style="width: 100%; padding: 11px;" onclick="performLogin()">
+          Anmelden & Daten laden
+        </button>
+
+        <div id="loginError" style="color: var(--color-danger); margin-top: 14px; font-size: 0.88rem; font-weight: 600; display: none;">
+          Falsche Anmeldedaten.
+        </div>
       </div>
 
-      <div class="form-group" style="text-align: left; margin-bottom: 20px;">
-        <label for="loginPassword">Passwort</label>
-        <input type="password" id="loginPassword" placeholder="Passwort eingeben" onkeydown="if(event.key==='Enter') performLogin()">
-      </div>
+      <!-- Option A: Profil- & Rollenauswahl bei Mehrfachrollen -->
+      <div id="profilePickerSection" style="display: none;">
+        <div class="login-logo">OVK ID Landscape</div>
+        <h2 style="font-size: 1.15rem; color: #1e293b; margin-bottom: 6px;">Profil auswählen</h2>
+        <p style="color: var(--color-text-muted); font-size: 0.83rem; margin-bottom: 16px;">
+          Für <strong id="profilePickerEmailDisplay" style="color: var(--color-text-charcoal);"></strong> stehen mehrere Profile zur Verfügung. Bitte wähle deine gewünschte Rolle:
+        </p>
 
-      <button type="button" class="btn btn-primary" id="loginBtn" style="width: 100%; padding: 11px;" onclick="performLogin()">
-        Anmelden & Daten laden
-      </button>
+        <div id="profileCardsContainer" class="profile-card-list"></div>
 
-      <div id="loginError" style="color: var(--color-danger); margin-top: 14px; font-size: 0.88rem; font-weight: 600; display: none;">
-        Falsche Anmeldedaten.
+        <button type="button" class="btn btn-secondary" style="width: 100%; padding: 9px; font-size: 0.85rem;" onclick="cancelProfileSelection()">
+          ← Zurück zur Anmeldung
+        </button>
       </div>
     </div>
   </div>
@@ -988,6 +1072,7 @@
         <!-- Anlege- / Bearbeitungsmaske -->
         <div style="background: #f8fafc; border: 1px solid var(--color-border); border-radius: 8px; padding: 18px 20px; margin-bottom: 22px;">
           <h3 style="font-size: 0.98rem; font-weight: 700; margin-bottom: 14px;" id="authFormTitle">Neuen Benutzer / Admin anlegen</h3>
+          <input type="hidden" id="auth_profile_key" value="">
 
           <div class="form-row">
             <div class="form-group w-md">
@@ -1134,8 +1219,102 @@
     }
 
     // -----------------------------------------------------------------
-    // LOGIN & INITIALISIERUNG
+    // LOGIN & INITIALISIERUNG (OPTION A: MULTI-PROFILE PICKER)
     // -----------------------------------------------------------------
+    let pendingProfilesState = null;
+
+    function getRoleBadgeInfo(role, partnerId) {
+      switch (role) {
+        case 'admin':
+          return { icon: '👑', label: 'Administrator', desc: 'Vollzugriff auf alle Partner & Core-Kataloge', badgeClass: 'role-admin' };
+        case 'vermarkter':
+          return { icon: '🏷️', label: `Vermarkter: ${partnerId ? partnerId.toUpperCase() : ''}`, desc: `Zugriff auf Vermarkter-Matrix & Inventar (${partnerId})`, badgeClass: 'role-vermarkter' };
+        case 'ssp':
+          return { icon: '⚡', label: `SSP: ${partnerId ? partnerId.toUpperCase() : ''}`, desc: `Supply-Side-Plattform Konfiguration (${partnerId})`, badgeClass: 'role-ssp' };
+        case 'dsp':
+          return { icon: '🎯', label: `DSP: ${partnerId ? partnerId.toUpperCase() : ''}`, desc: `Demand-Side-Plattform Konfiguration (${partnerId})`, badgeClass: 'role-dsp' };
+        case 'data_partner':
+          return { icon: '📊', label: `Data Partner: ${partnerId ? partnerId.toUpperCase() : ''}`, desc: `Data-Partner ID & SSP Matrix (${partnerId})`, badgeClass: 'role-data_partner' };
+        default:
+          return { icon: '👤', label: role, desc: partnerId || '', badgeClass: '' };
+      }
+    }
+
+    function renderProfilePicker(profiles, pwd, identifier) {
+      pendingProfilesState = { profiles, pwd, identifier };
+      document.getElementById('loginFormSection').style.display = 'none';
+      document.getElementById('profilePickerSection').style.display = 'block';
+      document.getElementById('profilePickerEmailDisplay').textContent = identifier;
+
+      const container = document.getElementById('profileCardsContainer');
+      container.innerHTML = '';
+
+      profiles.forEach(p => {
+        const info = getRoleBadgeInfo(p.role, p.partnerId);
+        const card = document.createElement('div');
+        card.className = 'profile-card-item';
+        card.onclick = () => selectProfile(p.profileKey);
+
+        card.innerHTML = `
+          <div class="profile-card-icon">${info.icon}</div>
+          <div class="profile-card-info">
+            <div class="profile-card-title">
+              <span>${info.label}</span>
+              <span class="role-badge ${info.badgeClass}" style="font-size: 0.7rem; padding: 1px 6px;">${p.role}</span>
+            </div>
+            <div class="profile-card-subtitle">${p.name ? p.name + ' • ' : ''}${info.desc}</div>
+          </div>
+          <div class="profile-card-arrow">➔</div>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    function cancelProfileSelection() {
+      pendingProfilesState = null;
+      document.getElementById('profilePickerSection').style.display = 'none';
+      document.getElementById('loginFormSection').style.display = 'block';
+      const btn = document.getElementById('loginBtn');
+      if (btn) {
+        btn.disabled = false;
+        btn.textContent = "Anmelden & Daten laden";
+      }
+    }
+
+    async function selectProfile(profileKey) {
+      if (!pendingProfilesState) return;
+      const { pwd, identifier } = pendingProfilesState;
+
+      const container = document.getElementById('profileCardsContainer');
+      container.innerHTML = '<div style="text-align: center; padding: 18px; color: var(--color-ovk-blue); font-weight: 600;">Authentifiziere gewähltes Profil...</div>';
+
+      try {
+        const res = await fetch(WORKER_URL + "/login", {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            selectedProfileKey: profileKey,
+            password: pwd,
+            email: identifier.includes('@') ? identifier : undefined,
+            username: identifier
+          })
+        });
+
+        if (!res.ok) {
+          const errData = await res.json().catch(() => ({}));
+          alert(errData.error || "Fehler beim Laden des Profils");
+          cancelProfileSelection();
+          return;
+        }
+
+        const data = await res.json();
+        handleSuccessfulLogin(data, pwd, identifier);
+      } catch (e) {
+        alert("Netzwerkfehler: " + e.message);
+        cancelProfileSelection();
+      }
+    }
+
     async function performLogin() {
       const identifier = document.getElementById('loginIdentifier').value.trim();
       const pwd = document.getElementById('loginPassword').value.trim();
@@ -1170,45 +1349,14 @@
         }
 
         const data = await res.json();
-        sessionPassword = pwd;
-        isAdmin = data.isAdmin;
-        currentUser = {
-          role: data.role,
-          id: data.partnerId,
-          name: data.partnerName || identifier,
-          email: data.email || (identifier.includes('@') ? identifier : null)
-        };
 
-        window.OVK_LANDSCAPE_CONFIG = { vermarkter: [] };
-
-        if (data.configs && data.configs.core && data.configs.core.code) {
-          executeConfigCode(data.configs.core.code, 'config/core.js');
-        }
-        if (data.configs && data.configs.dataPartners && data.configs.dataPartners.code) {
-          executeConfigCode(data.configs.dataPartners.code, 'config/data_partners.js');
-        }
-        if (data.configs && Array.isArray(data.configs.vermarkter)) {
-          for (const vFile of data.configs.vermarkter) {
-            if (vFile && vFile.code) {
-              executeConfigCode(vFile.code, vFile.fullPath || vFile.relativePath);
-            }
-          }
+        // Option A: Mehrere Profile für dieselbe E-Mail vorhanden?
+        if (data.requireProfileSelection && Array.isArray(data.profiles) && data.profiles.length > 1) {
+          renderProfilePicker(data.profiles, pwd, identifier);
+          return;
         }
 
-        CONFIG = window.OVK_LANDSCAPE_CONFIG || {};
-        if (!CONFIG.vermarkter) CONFIG.vermarkter = [];
-        if (!CONFIG.ssps) CONFIG.ssps = [];
-        if (!CONFIG.dsps) CONFIG.dsps = [];
-        if (!CONFIG.dataPartners) CONFIG.dataPartners = [];
-        if (!CONFIG.ids) CONFIG.ids = [];
-        if (!CONFIG.usecases) CONFIG.usecases = [];
-
-        if (Array.isArray(data.authPartners)) {
-          authPartnersList = data.authPartners;
-        }
-
-        setupUIForUser();
-        document.getElementById('loginOverlay').style.display = 'none';
+        handleSuccessfulLogin(data, pwd, identifier);
 
       } catch (e) {
         err.style.display = 'block';
@@ -1216,6 +1364,49 @@
         btn.disabled = false;
         btn.textContent = "Anmelden & Daten laden";
       }
+    }
+
+    function handleSuccessfulLogin(data, pwd, identifier) {
+      sessionPassword = pwd;
+      isAdmin = data.isAdmin;
+      currentUser = {
+        role: data.role,
+        id: data.partnerId,
+        name: data.partnerName || identifier,
+        email: data.email || (identifier.includes('@') ? identifier : null)
+      };
+
+      window.OVK_LANDSCAPE_CONFIG = { vermarkter: [] };
+
+      if (data.configs && data.configs.core && data.configs.core.code) {
+        executeConfigCode(data.configs.core.code, 'config/core.js');
+      }
+      if (data.configs && data.configs.dataPartners && data.configs.dataPartners.code) {
+        executeConfigCode(data.configs.dataPartners.code, 'config/data_partners.js');
+      }
+      if (data.configs && Array.isArray(data.configs.vermarkter)) {
+        for (const vFile of data.configs.vermarkter) {
+          if (vFile && vFile.code) {
+            executeConfigCode(vFile.code, vFile.fullPath || vFile.relativePath);
+          }
+        }
+      }
+
+      CONFIG = window.OVK_LANDSCAPE_CONFIG || {};
+      if (!CONFIG.vermarkter) CONFIG.vermarkter = [];
+      if (!CONFIG.ssps) CONFIG.ssps = [];
+      if (!CONFIG.dsps) CONFIG.dsps = [];
+      if (!CONFIG.dataPartners) CONFIG.dataPartners = [];
+      if (!CONFIG.ids) CONFIG.ids = [];
+      if (!CONFIG.usecases) CONFIG.usecases = [];
+
+      if (Array.isArray(data.authPartners)) {
+        authPartnersList = data.authPartners;
+      }
+
+      setupUIForUser();
+      document.getElementById('loginOverlay').style.display = 'none';
+      cancelProfileSelection();
     }
 
     function setupUIForUser() {
@@ -1285,7 +1476,9 @@
       sessionPassword = "";
       currentUser = null;
       isAdmin = false;
+      pendingProfilesState = null;
       document.getElementById('loginPassword').value = '';
+      cancelProfileSelection();
       document.getElementById('loginOverlay').style.display = 'flex';
       hideAllSections();
       document.getElementById('adminTabsBar').style.display = 'none';
@@ -2053,13 +2246,13 @@
     function editPartnerAuthByIndex(idx) {
       const p = authPartnersList[idx];
       if (!p) return;
-      editPartnerAuth(p.id, p.role, p.name, p.email, p.partnerId);
+      editPartnerAuth(p.profileKey || p.id, p.role, p.name, p.email, p.partnerId);
     }
 
     function deletePartnerAuthByIndex(idx) {
       const p = authPartnersList[idx];
       if (!p) return;
-      deletePartnerAuth(p.id);
+      deletePartnerAuth(p.profileKey || p.id);
     }
 
     function toggleAuthPartnerIdField() {
@@ -2069,19 +2262,21 @@
       else group.style.display = 'flex';
     }
 
-    function editPartnerAuth(id, role, name, email, partnerId) {
-      document.getElementById('auth_email').value = email || id;
-      document.getElementById('auth_email').disabled = true;
+    function editPartnerAuth(profileKey, role, name, email, partnerId) {
+      document.getElementById('auth_profile_key').value = profileKey || '';
+      document.getElementById('auth_email').value = email || (profileKey && !profileKey.includes(':') ? profileKey : '');
+      document.getElementById('auth_email').disabled = false;
       document.getElementById('auth_role').value = role;
       document.getElementById('auth_name').value = name;
-      document.getElementById('auth_partner_id').value = partnerId || (role !== 'admin' ? id : '');
+      document.getElementById('auth_partner_id').value = partnerId || (role !== 'admin' ? profileKey : '');
       document.getElementById('auth_password').value = '';
       document.getElementById('auth_password').focus();
-      document.getElementById('authFormTitle').textContent = `Passwort ändern für "${name}" (${email || id})`;
+      document.getElementById('authFormTitle').textContent = `Passwort/Profil ändern für "${name}" (${role})`;
       toggleAuthPartnerIdField();
     }
 
     function resetAuthForm() {
+      document.getElementById('auth_profile_key').value = '';
       document.getElementById('auth_email').value = '';
       document.getElementById('auth_email').disabled = false;
       document.getElementById('auth_role').value = 'admin';
@@ -2100,6 +2295,7 @@
     }
 
     async function submitPartnerAuth() {
+      const profileKeyVal = document.getElementById('auth_profile_key').value.trim();
       const emailVal = document.getElementById('auth_email').value.trim();
       const role = document.getElementById('auth_role').value;
       const name = document.getElementById('auth_name').value.trim() || emailVal;
@@ -2121,6 +2317,7 @@
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             password: sessionPassword,
+            profileKey: profileKeyVal || undefined,
             targetPartnerId: partnerIdVal || emailVal,
             email: emailVal,
             role,
@@ -2133,12 +2330,29 @@
         if (res.ok) {
           alert(`✓ Login für "${name}" (${role}) erfolgreich gespeichert!`);
           
-          const finalId = (partnerIdVal || emailVal).toLowerCase();
-          const existing = authPartnersList.find(p => p.id === finalId || (p.email && p.email.toLowerCase() === emailVal.toLowerCase()));
+          const cleanEmail = emailVal.toLowerCase();
+          const cleanPartnerId = partnerIdVal.toLowerCase();
+          const finalProfileKey = data.profileKey || profileKeyVal || (role === 'admin' ? `${cleanEmail}:admin` : `${cleanEmail}:${role}:${cleanPartnerId}`);
+          
+          const existing = authPartnersList.find(p => (p.profileKey && p.profileKey.toLowerCase() === finalProfileKey.toLowerCase()) || p.id === finalProfileKey.toLowerCase());
           if (existing) {
-            existing.role = role; existing.name = name; existing.email = emailVal; existing.partnerId = partnerIdVal || null; existing.updatedAt = new Date().toISOString();
+            existing.profileKey = finalProfileKey;
+            existing.id = finalProfileKey;
+            existing.role = role;
+            existing.name = name;
+            existing.email = emailVal;
+            existing.partnerId = partnerIdVal || null;
+            existing.updatedAt = new Date().toISOString();
           } else {
-            authPartnersList.push({ id: finalId, role, name, email: emailVal, partnerId: partnerIdVal || null, updatedAt: new Date().toISOString() });
+            authPartnersList.push({
+              profileKey: finalProfileKey,
+              id: finalProfileKey,
+              role,
+              name,
+              email: emailVal,
+              partnerId: partnerIdVal || null,
+              updatedAt: new Date().toISOString()
+            });
           }
           resetAuthForm();
           renderAuthTable();
@@ -2150,21 +2364,25 @@
       }
     }
 
-    async function deletePartnerAuth(pId) {
-      if (!confirm(`Soll der Zugang "${pId}" wirklich gelöscht werden?`)) return;
+    async function deletePartnerAuth(pKey) {
+      if (!confirm(`Soll der Zugang "${pKey}" wirklich gelöscht werden?`)) return;
 
       try {
         const res = await fetch(WORKER_URL + "/admin/delete-partner-auth", {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ password: sessionPassword, targetPartnerId: pId })
+          body: JSON.stringify({
+            password: sessionPassword,
+            profileKey: pKey,
+            targetPartnerId: pKey
+          })
         });
 
         const data = await res.json();
         if (res.ok) {
-          authPartnersList = authPartnersList.filter(p => p.id !== pId);
+          authPartnersList = authPartnersList.filter(p => (p.profileKey || p.id) !== pKey && p.id !== pKey);
           renderAuthTable();
-          alert(`✓ Zugang für ${pId} wurde entfernt.`);
+          alert(`✓ Zugang für ${pKey} wurde entfernt.`);
         } else {
           alert("Fehler beim Löschen: " + (data.error || 'Unbekannter Fehler'));
         }
