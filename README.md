@@ -135,7 +135,6 @@ Das Projekt bietet ein modernes, zentrales Web-Portal zur rollenbasierten Pflege
   - **Vermarkter-Ansicht:** Ergonomische Coverage-Matrix für 4 Inventartypen (Desktop, Mobile Web, In-App, CTV), 65-Zeichen-Limit für Beschreibungen, DSP-Ausschlüsse und SSP-Opt-In-Chips.
   - **Partner-Ansichten (SSPs, DSPs, Data Partner):** Aufgeräumte Formulare ohne technischen JavaScript-Code.
   - **Sicherheit & Git-Sync:** Synchronisation über den Gatekeeper Worker (`docs/gatekeeper_worker.js`) mit SHA-256 + Salt Verschlüsselung (`config/auth_registry.json`).
-  - *Legacy-Editoren:* [`core_editor.html`](core_editor.html) und [`vermarkter_editor.html`](vermarkter_editor.html) bleiben aus Kompatibilitätsgründen erhalten.
 
 ---
 
@@ -161,8 +160,6 @@ node scripts/validate-config.js
 - `style.css` - Haupt-Stylesheet
 - `app.js` - Anwendungslogik, Filterung & dynamisches Konfigurationsladen
 - `editor.html` - **Zentrales Unified Config Portal** (Multi-Admin, Vermarkter, SSP, DSP, Data Partner)
-- `core_editor.html` - Legacy-Editor für Core- & Data-Partner-Konfigurationen
-- `vermarkter_editor.html` - Legacy-Editor für Vermarkter-Konfigurationen
 - `config/core.js` - Zentrale Register-Konfiguration (IDs, Usecases, DSPs, SSPs)
 - `config/data_partners.js` - Data-Partner-Konfiguration
 - `config/auth_registry.json` - Git-basierte Benutzer- und Partner-Zugänge (SHA-256 gehasht)
